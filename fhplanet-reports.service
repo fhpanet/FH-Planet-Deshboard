@@ -1,0 +1,12 @@
+[Unit]
+Description=FH Planet Reporting Site
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/fhplanet/app.py serve
+WorkingDirectory=%h/fhplanet
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ল্যাম্প পেজ — ড্যাশবোর্ড</title>
+<style>
+  :root{
+    --bg:#0f0f14; --panel:#16161f; --panel2:#1c1c28; --border:#2a2a3a;
+    --text:#e6e6ee; --muted:#8a8a9a; --amber:#f5c542;
+    --green:#4ade80; --red:#ef4444; --blue:#60a5fa; --purple:#a78bfa; --cyan:#22d3ee;
+    --radius:14px; --shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter','Noto Sans Bengali',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); overflow:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0;
+    background:radial-gradient(120% 70% at 90% 10%, rgba(245,197,66,.07), transparent 45%); pointer-events:none; z-index:0;
+  }
+  .app{display:flex; height:100%; position:relative; z-index:1;}
+
+  .sidebar{
+    width:230px; background:linear-gradient(180deg,#12121a,#1a1a24);
+    border-right:1px solid var(--border); padding:18px 14px; display:flex; flex-direction:column; gap:12px; overflow-y:auto;
+  }
+  .logo{font-size:20px; font-weight:700; display:flex; align-items:center; gap:8px;}
+  .logo .lamp{color:var(--amber); font-size:24px;}
+  .nav{display:flex; flex-direction:column; gap:6px;}
+  .nav button{
+    text-align:left; padding:11px 14px; border:none; border-radius:10px;
+    background:var(--panel2); color:var(--text); cursor:pointer;
+    font-size:14px; transition:.18s; display:flex; align-items:center; gap:10px;
+  }
+  .nav button:hover{background:#242432; color:var(--amber);}
+  .nav button.active{background:#242432; color:var(--amber); font-weight:600; box-shadow:inset 3px 0 0 var(--amber);}
+  .nav .icon{width:20px; text-align:center;}
+
+  .main{flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:16px;}
+
+  .topbar{display:flex; align-items:center; gap:12px; justify-content:space-between;}
+  .topbar h1{font-size:20px; letter-spacing:.5px;}
+  .topbar .date{font-size:13px; color:var(--muted);}
+
+  .modebar{display:flex; gap:8px; flex-wrap:wrap;}
+  .modebar button{
+    padding:8px 14px; border-radius:999px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--muted); cursor:pointer; font-size:13px;
+  }
+  .modebar button.active{background:var(--amber); color:#0f0f14; border-color:var(--amber); font-weight:600;}
+
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; box-shadow:var(--shadow);
+  }
+  .card h2{font-size:16px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .card .hint{font-size:12px; color:var(--muted); margin-bottom:10px;}
+
+  .todo-row{display:flex; gap:8px; margin-bottom:10px;}
+  .todo-row input{flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--text); font-size:14px;}
+  .todo-row button{padding:10px 14px; border:none; border-radius:10px; background:var(--amber); color:#0f0f14; font-weight:600; cursor:pointer;}
+  .todo-list{list-style:none; display:flex; flex-direction:column; gap:8px;}
+  .todo-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-radius:10px; background:var(--panel2); border:1px solid var(--border);
+  }
+  .todo-item.done{text-decoration:line-through; opacity:.6;}
+  .todo-item .ms{width:22px; height:22px; border-radius:6px; border:1px solid var(--border);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--muted);}
+  .ms.checked{background:var(--amber); border-color:var(--amber); color:#0f0f14; font-size:13px;}
+  .todo-item .txt{flex:1; font-size:14px; cursor:pointer;}
+  .todo-item .time-tag,.todo-item .mode-tag{font-size:11px; padding:3px 8px; border-radius:999px; background:#242432; color:var(--muted);}
+  .todo-item .mode-tag.work{background:#242432; color:var(--muted);}
+  .todo-item .del{width:30px; text-align:center; border:none; background:transparent; color:var(--red); cursor:pointer; font-size:16px;}
+
+  .filters{display:flex; gap:6px; flex-wrap:wrap;}
+  .filters button{
+    padding:5px 11px; border-radius:8px; border:1px solid var(--border); background:var(--panel2);
+    color:var(--muted); cursor:pointer; font-size:12px;
+  }
+  .filters button.active{background:var(--amber); color:#0f0f14; border-color:var(--amber);}
+
+  .select-all-btn{
+    padding:6px 12px; border:none; border-radius:8px; background:#242432; color:var(--muted);
+    cursor:pointer; font-size:12px;
+  }
+  .select-all-btn.on{background:var(--amber); color:#0f0f14;}
+
+  .batch-bar{
+    border:1px solid var(--amber); background:#1a1206; border-radius:10px; padding:10px 12px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .batch-bar .lbl{font-size:12px; color:var(--amber); font-weight:600;}
+  .batch-bar .row{display:flex; gap:6px; align-items:center;}
+  .batch-bar select{padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:#0f0f14; color:var(--text); font-size:13px;}
+  .batch-bar button{padding:6px 12px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;}
+  .batch-bar .del{background:#2a120c; color:var(--red);} .batch-bar .norm{background:#242432; color:var(--muted);}
+
+  .routine-chain{display:flex; flex-direction:column; gap:8px; margin-bottom:12px;}
+  .step{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-radius:10px; background:var(--panel2); border:1px solid var(--border);
+  }
+  .step .num{width:26px; height:26px; border-radius:50%; background:#242432; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;}
+  .step.done .num{background:var(--green); color:#0f0f14;}
+  .step .label{flex:1; font-size:14px;}
+  .step .time{width:70px; text-align:right; font-size:12px; color:var(--muted);}
+  .step .mode-tag{font-size:11px; padding:3px 8px; border-radius:999px; background:#242432; color:var(--muted);}
+  .step .rm{border:none; background:transparent; color:var(--red); cursor:pointer; font-size:16px;}
+
+  .sleepbar{display:flex; gap:8px; flex-wrap:wrap;}
+  .sleepbar button{
+    padding:10px 16px; border-radius:10px; border:none; cursor:pointer; font-weight:600; font-size:14px;
+  }
+  .sleepbar .btn-deeper{background:#1a1a2a; color:var(--text); border:1px solid var(--border);}
+
+  .rem-item{display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px; background:var(--panel2); border:1px solid var(--border);}
+  .rem-item .when{flex:1; font-size:13px; color:var(--muted);}
+  .rem-item .mode-tag{font-size:11px; padding:3px 8px; border-radius:999px; background:#242432; color:var(--muted);}
+  .rem-item .act{display:flex; gap:6px; flex-shrink:0;}
+  .rem-item .act button{padding:6px 10px; border-radius:7px; border:none; cursor:pointer; font-size:12px;}
+  .rem-item .act .del{background:#2a2a3a; color:var(--red);} .rem-item .act .set{background:#242432; color:var(--muted);}
+
+  .proj-card{background:var(--panel2); border:1px solid var(--border); border-radius:12px; overflow:hidden;}
+  .proj-card .ph{display:flex; align-items:center; justify-content:space-between; padding:12px;}
+  .proj-card .ph h3{font-size:15px;}
+  .proj-card .ph .sub{font-size:12px; color:var(--muted);}
+  .proj-card .ph .mode-tag{font-size:11px; padding:3px 8px; border-radius:999px; background:#242432; color:var(--muted);}
+  .proj-card .tasks{display:flex; flex-direction:column; gap:6px; padding:12px;}
+  .proj-card .task{display:flex; gap:8px; align-items:center; font-size:13px;}
+  .proj-card .task input{flex:1; padding:6px 8px; border-radius:7px; border:1px solid var(--border); background:#0f0f14; color:var(--text); font-size:13px;}
+  .proj-card .task .del{width:22px; border:none; background:transparent; color:var(--red); cursor:pointer; font-size:14px;}
+
+  .night-mode body{background:#0a0a10;}
+  .night-mode .app{background:#0a0a10;}
+  .night-mode .card{background:#101018; border-color:#1f1f2e;}
+
+  .msg{font-size:13px; color:var(--muted); text-align:center; padding:6px;}
+  .row-pad{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .row-pad .grow{flex:1;}
+
+  @media (max-width:620px){
+    .sidebar{width:190px; padding:12px 8px;}
+    .main{padding:12px;}
+    .topbar h1{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="lamp">💡</span> ল্যাম্প পেজ</div>
+    <div class="nav" id="nav">
+      <button data-tab="todo"><span class="icon">📋</span> টড়ো</button>
+      <button data-tab="routine"><span class="icon">⏱️</span> রুটিন / ঘুম</button>
+      <button data-tab="reminders"><span class="icon">🔔</span> রিমাইন্ডার</button>
+      <button data-tab="projects"><span class="icon">📁</span> প্রজেক্ট</button>
+      <button data-tab="modes"><span class="icon">🕰️</span> মোড</button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <section class="card" id="view-todo">
+      <h2>📋 টড়ো</h2>
+      <div class="todo-row">
+        <input id="todo-input" placeholder="কাজ যোগ করো…" maxlength="120">
+        <button id="todo-add">যোগ করো</button>
+      </div>
+      <div class="filters" id="todo-filters">
+        <button data-filter="all" class="active">সব মোড</button>
+        <button data-filter="work">🛠 ওয়ার্ক</button>
+        <button data-filter="private">🤫 প্রাইভেট</button>
+        <button data-filter="self">🪞 সেলফ</button>
+        <button data-filter="personal">❤️ পার্সোনাল</button>
+      </div>
+      <div class="row-pad"><button class="select-all-btn" id="todo-select-all">✓ সিলেক্ট সব</button></div>
+      <div class="todo-list" id="todo-list"></div>
+      <div class="row-pad" style="justify-content:flex-end;"><span class="msg" id="todo-count"></span></div>
+      <div class="batch-bar" id="todo-batch" style="display:none;">
+        <span class="lbl">📌 সিলেক্ট করা আছে <b id="batch-count">0</b>টি</span>
+        <div class="row">
+          <select id="batch-mode">
+            <option value="work">🛠 ওয়ার্ক</option>
+            <option value="private">🤫 প্রাইভেট</option>
+            <option value="self">🪞 সেলফ</option>
+            <option value="personal">❤️ পার্সোনাল</option>
+          </select>
+          <button id="batch-apply-mode">মোড প্রয়োগ</button>
+          <button id="batch-delete" class="del">সিলেক্টড ডিলিট</button>
+          <button id="batch-clear" class="norm">বাতিল</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="view-routine">
+      <h2>⏱️ রুটিন চেইন (টাইম চেইন)</h2>
+      <div class="routine-chain" id="chain"></div>
+      <div class="filters" id="chain-filters">
+        <button data-filter="all" class="active">সব মোড</button>
+        <button data-filter="work">🛠 ওয়ার্ক</button>
+        <button data-filter="private">🤫 প্রাইভেট</button>
+        <button data-filter="self">🪞 সেলফ</button>
+        <button data-filter="personal">❤️ পার্সোনাল</button>
+      </div>
+      <div class="row-pad">
+        <input id="step-name" placeholder="ধাপের নাম (যেমন: ডাটা বন্ধ করো)" maxlength="80">
+        <input id="step-time" type="time">
+        <select id="step-mode">
+          <option value="personal">❤️ পার্সোনাল</option>
+          <option value="work">🛠 ওয়ার্ক</option>
+          <option value="private">🤫 প্রাইভেট</option>
+          <option value="self">🪞 সেলফ</option>
+        </select>
+        <button id="step-add">ধাপ যোগ করো</button>
+      </div>
+      <div class="sleepbar">
+        <button id="sleep-now" class="btn-deeper">🌙 ঘুমাও (নিট মোড)</button>
+        <button id="wake-up">☀️ জাগো (ওয়েক আপ)</button>
+        <button id="clear-chain" class="btn-deeper">চেইন মুছে ফেলো</button>
+      </div>
+      <div class="msg" id="chain-msg"></div>
+    </section>
+
+    <section class="card" id="view-reminders">
+      <h2>🔔 রিমাইন্ডার</h2>
+      <div id="reminder-list" class="rem-list"></div>
+      <div class="row-pad">
+        <div class="grow"><input id="rem-label" placeholder="রিমাইন্ডারের লেবেল" maxlength="80"></div>
+        <div class="grow"><input id="rem-time" type="time"></div>
+        <select id="rem-mode">
+          <option value="personal">❤️ পার্সোনাল</option>
+          <option value="work">🛠 ওয়ার্ক</option>
+          <option value="private">🤫 প্রাইভেট</option>
+          <option value="self">🪞 সেলফ</option>
+        </select>
+        <button id="rem-add" class="btn-set">সেট করো</button>
+        <button id="rem-reset" class="btn-cancel">রিসেট</button>
+      </div>
+    </section>
+
+    <section class="card" id="view-projects">
+      <h2>📁 প্রজেক্ট</h2>
+      <div class="row-pad">
+        <input id="proj-input" class="grow" placeholder="প্রজেক্টের নাম" maxlength="100">
+        <select id="proj-mode">
+          <option value="personal">❤️ পার্সোনাল</option>
+          <option value="work">🛠 ওয়ার্ক</option>
+          <option value="private">🤫 প্রাইভেট</option>
+          <option value="self">🪞 সেলফ</option>
+        </select>
+        <button id="proj-add">প্রজেক্ট যোগ করো</button>
+      </div>
+      <div class="proj-list" id="proj-list"></div>
+    </section>
+
+    <section class="card" id="view-modes">
+      <h2>🕰️ মোডস</h2>
+      <div class="modebar" id="modebar">
+        <button data-mode="work">🛠 Work</button>
+        <button data-mode="private">🤫 Private</button>
+        <button data-mode="self">🪞 Self</button>
+        <button data-mode="personal" class="active">❤️ Personal</button>
+      </div>
+      <div class="msg" id="mode-msg">Personal মোডে প্রকাশ্য থাকে — তোমার টড়ো, প্রজেক্ট ও রুটিন দেখা যাবে।</div>
+    </section>
+  </main>
+</div>
+
+<script>
+const STORAGE = { todo:'lamp.todo', chain:'lamp.chain', rem:'lamp.rem', proj:'lamp.proj', mode:'lamp.mode' };
+let mode = localStorage.getItem(STORAGE.mode) || 'personal';
+let filter = 'all';                      // all | work | private | self | personal
+let todo = JSON.parse(localStorage.getItem(STORAGE.todo)) || [];
+let chain = JSON.parse(localStorage.getItem(STORAGE.chain)) || [];
+let rem = JSON.parse(localStorage.getItem(STORAGE.rem)) || [];
+let proj = JSON.parse(localStorage.getItem(STORAGE.proj)) || [];
+let cid=200, pid=10;
+let selected = new Set();
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function saveAll(){
+  localStorage.setItem(STORAGE.todo, JSON.stringify(todo));
+  localStorage.setItem(STORAGE.chain, JSON.stringify(chain));
+  localStorage.setItem(STORAGE.rem, JSON.stringify(rem));
+  localStorage.setItem(STORAGE.proj, JSON.stringify(proj));
+}
+function fmtTime(h){
+  if(!h) return '—';
+  const [h1,m]=h.split(':').map(Number);
+  const am = h1<12;
+  const hh = am?h1:(h1-12);
+  return `${hh}:${String(m).padStart(2,'0')} ${am?'AM':'PM'}`;
+}
+function isModeMatch(item, m){
+  return item.mode === undefined || item.mode === null || item.mode === m;
+}
+
+function applyMode(m){
+  mode = m;
+  localStorage.setItem(STORAGE.mode, mode);
+  $$('.modebar button').forEach(b=>b.classList.toggle('active', b.dataset.mode===m));
+  const msgs = {
+    work:'Work মোডে Work কাজ ও প্রজেক্ট দেখা যাবে।',
+    private:'Private মোডে — প্রজেক্ট লুকানো, শুধু টড়ো ও রিমাইন্ডার থাকে।',
+    self:'Self মোডে — স্ব-চেকলিস্ট ও স্ব-রিফ্লেকশন দেখা যাবে।',
+    personal:'Personal মোডে — তোমার সব জিনিস প্রকাশ্য থাকে।'
+  };
+  $('#mode-msg').textContent = msgs[m] || msgs.personal;
+  document.documentElement.style.setProperty('--accent',
+    mode==='work'?'#60a5fa':mode==='private'?'#94a3b8':mode==='self'?'#a78bfa':'#f5c542');
+  $('#app').style.setProperty('--accent', getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+  const showProj = mode!=='private';
+  $('#view-projects').style.display = showProj?'block':'none';
+  if(!showProj) renderProj();
+}
+
+// ---------- TODO ----------
+function renderTodo(){
+  syncSelectFromDom();
+  const list = todo.filter(t=>isModeMatch(t, filter));
+  const box=$('#todo-list');
+  box.innerHTML = list.map(t=>`
+    <div class="todo-item ${t.done?'done':''}">
+      <div class="ms ${selected.has(t.id)?'checked':''}" data-id="${t.id}">${selected.has(t.id)?'✓':''}</div>
+      <div class="box ${t.done?'checked':''}" data-id="${t.id}"></div>
+      <div class="txt" data-id="${t.id}">${escapeHtml(t.text)}</div>
+      <div class="time-tag">⏱ ${t.time||''}</div>
+      <div class="mode-tag ${t.mode||''}">${t.mode||'—'}</div>
+      <button class="del" data-id="${t.id}">✕</button>
+    </div>`).join('');
+  box.querySelectorAll('.ms').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      if(selected.has(+b.dataset.id)) selected.delete(+b.dataset.id);
+      else selected.add(+b.dataset.id);
+      b.classList.toggle('checked', selected.has(+b.dataset.id));
+      b.innerHTML = selected.has(+b.dataset.id)?'✓':'';
+      updateBatch();
+    });
+  });
+  box.querySelectorAll('.box').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id=+b.dataset.id; const t=todo.find(x=>x.id===id);
+      t.done=!t.done; saveAll(); renderTodo();
+    });
+  });
+  box.querySelectorAll('.txt').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id=+b.dataset.id; const t=todo.find(x=>x.id===id);
+      t.done=!t.done; saveAll(); renderTodo();
+    });
+  });
+  box.querySelectorAll('.del').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      todo = todo.filter(t=>t.id!==+b.dataset.id); saveAll(); renderTodo(); updateBatch();
+    });
+  });
+  $('#todo-count').textContent = list.length? `${list.length}টি কাজ` : 'কোনো কাজ নেই';
+  updateBatch();
+}
+function updateBatch(){
+  const count = selected.size;
+  $('#batch-count').textContent = count;
+  $('#todo-batch').style.display = count? 'flex' : 'none';
+}
+function syncSelectFromDom(){
+  selected = new Set();
+  $('#todo-list .ms').forEach(b=>{ if(b.classList.contains('checked')) selected.add(+b.dataset.id); });
+}
+$('#todo-add').addEventListener('click', ()=>{
+  const v=$('#todo-input').value.trim();
+  if(!v) return;
+  todo.push({id:cid++, text:v, done:false, mode:filter});
+  $('#todo-input').value=''; renderTodo();
+});
+$$('#todo-filters button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    filter=b.dataset.filter;
+    $$('#todo-filters button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    renderTodo();
+  });
+});
+$('#todo-select-all').addEventListener('click', ()=>{
+  const all = todo.filter(t=>isModeMatch(t, filter)).length;
+  if(selected.size>=all){
+    selected=new Set(); renderTodo(); updateBatch();
+  } else {
+    todo.filter(t=>isModeMatch(t, filter)).forEach(t=>selected.add(t.id));
+    renderTodo(); updateBatch();
+  }
+});
+$('#batch-apply-mode').addEventListener('click', ()=>{
+  const m=$('#batch-mode').value;
+  todo.forEach(t=>{ if(selected.has(t.id)) t.mode=m; });
+  saveAll(); renderTodo(); syncSelectFromDom();
+});
+$('#batch-delete').addEventListener('click', ()=>{
+  todo = todo.filter(t=>!selected.has(t.id)); saveAll(); selected=new Set(); renderTodo();
+});
+$('#batch-clear').addEventListener('click', ()=>{
+  selected=new Set(); renderTodo();
+});
+
+// ---------- CHAIN ----------
+function renderChain(){
+  const list = chain.filter(c=>isModeMatch(c, filter));
+  const box=$('#chain');
+  const done=chain.filter(c=>c.done).length;
+  box.innerHTML = list.map((c,i)=>`
+    <div class="step ${c.done?'done':''}">
+      <div class="num">${i+1}</div>
+      <div class="label">${escapeHtml(c.label)}</div>
+      <div class="time">${c.time||'—'}</div>
+      <div class="mode-tag">${c.mode||'—'}</div>
+      <button class="rm" data-i="${i}">✕</button>
+    </div>`).join('');
+  box.querySelectorAll('.rm').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      chain.splice(+b.dataset.i,1); saveAll(); renderChain(); showMsg('ধাপ মুছে ফেলেছে।');
+    });
+  });
+  $('#chain-msg').textContent = done ? `${done}/${chain.length} ধাপ সম্পূর্ণ` : 'চেইনে ধাপ যোগ করো।';
+}
+$('#step-add').addEventListener('click', ()=>{
+  const l=$('#step-name').value.trim(), t=$('#step-time').value, m=$('#step-mode').value;
+  if(!l) return;
+  chain.push({id:cid++, label:l, time:t, done:false, mode:m});
+  $('#step-name').value=''; renderChain();
+});
+$('#clear-chain').addEventListener('click', ()=>{ chain=[]; saveAll(); renderChain(); });
+$('#sleep-now').addEventListener('click', ()=>{
+  chain=[]; saveAll();
+  document.body.classList.add('night-mode');
+  showMsg('🌙 নিট মোড চালু। ঘুমের জন্য প্রস্তুত।');
+  setTimeout(()=>{ if(document.body.classList.contains('night-mode')) showMsg('ঘুম গেলে ওয়েক আপ বাটনে ক্লিক করো। ☀️'); }, 1500);
+});
+$('#wake-up').addEventListener('click', ()=>{
+  document.body.classList.remove('night-mode');
+  showMsg('☀️ ওয়েক আপ! নিট মোড বন্ধ হয়েছে।');
+});
+function showMsg(m){ const el=$('#chain-msg'); el.textContent=m; setTimeout(()=>el.textContent='চেইনে ধাপ যোগ করো।', 3500); }
+
+// ---------- REMINDERS ----------
+function renderReminders(){
+  const list = rem.filter(r=>isModeMatch(r, filter));
+  const box=$('#reminder-list');
+  box.innerHTML = list.map(r=>`
+    <div class="rem-item">
+      <div class="when"><b>${escapeHtml(r.label)}</b> <span class="lab">— ${fmtTime(r.time)}</span></div>
+      <div class="mode-tag">${r.mode||'—'}</div>
+      <div class="act">
+        <button class="set" data-id="${r.id}">সেট</button>
+        <button class="del" data-id="${r.id}">দূর</button>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('.set').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id=+b.dataset.id; const r=rem.find(x=>x.id===id);
+      rem=rem.map(x=>x.id===id?{...x, done:false}:x);
+      saveAll(); renderReminders();
+    });
+  });
+  box.querySelectorAll('.del').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      rem=rem.filter(x=>x.id!==+b.dataset.id); saveAll(); renderReminders();
+    });
+  });
+}
+$('#rem-add').addEventListener('click', ()=>{
+  const l=$('#rem-label').value.trim(), t=$('#rem-time').value, m=$('#rem-mode').value;
+  if(!l) return;
+  rem.push({id:cid++, label:l, time:t, mode:m});
+  $('#rem-label').value=''; renderReminders();
+});
+$('#rem-reset').addEventListener('click', ()=>{
+  rem=[]; saveAll(); renderReminders();
+  rem.push({id:cid++, label:'সকাল ৭টা বের হওয়া', time:'07:00', mode:'personal'});
+  rem.push({id:cid++, label:'ঘুমানোর সময় ১১টা', time:'23:00', mode:'personal'});
+  saveAll(); renderReminders(); setTimeout(()=>showMsg('রিমাইন্ডার ২টা আবার লোড হয়েছে।'), 1500);
+});
+renderReminders();
+
+// ---------- PROJECTS ----------
+function renderProj(){
+  const visible = mode!=='private';
+  const box=$('#proj-list');
+  if(!visible){ box.innerHTML=''; return; }
+  const list = proj.filter(p=>isModeMatch(p, filter));
+  box.innerHTML = list.map(p=>`
+    <div class="proj-card">
+      <div class="ph">
+        <h3>${escapeHtml(p.name)}</h3>
+        <span class="sub">${p.tasks.length}টি টাস্ক</span>
+        <span class="mode-tag">${p.mode||'—'}</span>
+      </div>
+      <div class="tasks">
+        ${p.tasks.map(t=>`
+          <div class="task">
+            <input readonly value="${escapeHtml(t)}">
+            <button class="del" data-pid="${p.id}">✕</button>
+          </div>`).join('')}
+        <div class="task">
+          <input data-pid="${p.id}" placeholder="টাস্ক যোগ করো…">
+        </div>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('.task input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const pid=+inp.dataset.pid; const v=inp.value.trim();
+      if(!v) return;
+      const p=proj.find(x=>x.id===pid);
+      if(!p.tasks.includes(v)){ p.tasks.push(v); saveAll(); renderProj(); }
+    });
+  });
+  box.querySelectorAll('.task .del').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const pid=+b.dataset.pid; const p=proj.find(x=>x.id===pid);
+      p.tasks=p.tasks.filter(t=>t!==inp.value.trim()); saveAll(); renderProj();
+    });
+  });
+  box.querySelectorAll('.ph .del').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      proj=proj.filter(p=>p.id!==+b.dataset.pid); saveAll(); renderProj();
+    });
+  });
+}
+$('#proj-add').addEventListener('click', ()=>{
+  const v=$('#proj-input').value.trim(), m=$('#proj-mode').value;
+  if(!v) return;
+  proj.push({id:pid++, name:v, tasks:[], mode:m});
+  $('#proj-input').value=''; renderProj();
+});
+renderProj();
+
+// ---------- MODES ----------
+$$('.modebar button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    applyMode(b.dataset.mode);
+    filter = b.dataset.mode;
+    $$('#todo-filters button, #chain-filters button').forEach(x=>{
+      x.classList.toggle('active', x.dataset.filter===b.dataset.mode);
+    });
+    renderTodo(); renderChain();
+    $('#todo-input').focus();
+  });
+});
+
+// ---------- CORE ----------
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+renderTodo(); renderChain(); renderReminders(); renderProj();
+
+window.addEventListener('load', ()=>{
+  const saved = localStorage.getItem(STORAGE.mode);
+  if(saved) applyMode(saved);
+  filter = mode;
+  $$('#todo-filters button, #chain-filters button').forEach(x=>{
+    x.classList.toggle('active', x.dataset.filter===mode);
+  });
+  renderTodo(); renderChain();
+});
+
+setInterval(()=>{
+  const d=new Date();
+  const hr=String(d.getHours()).padStart(2,'0'), mn=String(d.getMinutes()).padStart(2,'0');
+  const am = d.getHours()<12;
+  document.querySelector('.topbar .date').textContent = `${String(d.getDate()).padStart(2,'0')} / ${String(d.getMonth()+1).padStart(2,'0')} / ${d.getFullYear()} · ${hr}:${mn} ${am?'AM':'PM'}`;
+}, 1000);
+</script>
+</body>
+</html>
