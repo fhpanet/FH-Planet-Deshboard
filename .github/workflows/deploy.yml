@@ -1,0 +1,83 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      deploy_ssh:
+        description: Also deploy over SSH to the No-IP / Oracle host
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Ledger self-check and public staging
+        run: |
+          node scripts/selfcheck.js
+          sh scripts/stage-public.sh
+          test -f dist/index.html
+          test -f dist/finance/index.html
+          test -f dist/finance/css/app.css
+          test ! -f dist/app.py
+          test ! -f dist/fhplanet-reports.service
+          if grep -RIn --include='*.html' --include='*.js' --include='*.css' --include='*.md' -e "FS Organization" -e "FS Academy" . ; then
+            echo "Use FH Organization, FH Academy, and FH Planet."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fh-planet-dist
+          path: dist/
+          if-no-files-found: error
+
+  deploy_cloudflare_pages:
+    needs: verify
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Publish to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PAGES_PROJECT: ${{ secrets.CF_PAGES_PROJECT }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not set. Skipping Cloudflare deploy."
+            exit 0
+          fi
+          sh scripts/deploy-cloudflare.sh
+
+  deploy_ssh_server:
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_ssh == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rsync to the SSH host
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "SSH_PRIVATE_KEY is not set. Skipping SSH deploy."
+            exit 0
+          fi
+          sh scripts/deploy-ssh.sh
