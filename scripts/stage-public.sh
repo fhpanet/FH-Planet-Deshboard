@@ -33,6 +33,9 @@ grep -q "FH_PLANET_NAV" dist/assets/nav.js
 grep -q "FH_PLANET_COMMAND" dist/assets/command.js
 grep -q "FHPlanetShell" dist/assets/windows.js
 grep -q "fh-side-toggle" dist/assets/nav.js
+grep -q "fh-start-btn" dist/assets/nav.js
+grep -q "getOpenIds" dist/assets/windows.js
+grep -q "translate3d" dist/assets/windows.js
 grep -q "assets/command.js" dist/index.html
 grep -q "assets/command.js" dist/dash.html
 grep -q "assets/command.js" dist/finance/index.html

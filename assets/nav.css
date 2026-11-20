@@ -1,7 +1,7 @@
 /* FH Planet shared category bar + project taskbar. Edit assets/nav.js to add items. */
 :root, html.fh-has-catnav {
   --fh-catnav-h: 56px;
-  --fh-taskbar-h: 64px;
+  --fh-taskbar-h: 48px;
   --fh-cmd-h: 56px;
 }
 .fh-catnav {
@@ -11,9 +11,7 @@
   right: 0;
   z-index: 5000;
   height: var(--fh-catnav-h);
-  background: rgba(16, 16, 24, 0.92);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  background: rgba(16, 16, 24, 0.97);
   border-bottom: 1px solid rgba(245, 197, 66, 0.28);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   color: #e6e6ee;
@@ -98,73 +96,118 @@
   right: 0;
   bottom: 0;
   z-index: 4000;
-  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
   font-family: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
 }
 .fh-taskbar-inner {
   pointer-events: auto;
+  position: relative;
   display: flex;
-  align-items: stretch;
-  gap: 6px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  align-items: center;
+  gap: 4px;
+  overflow: visible;
   margin: 0 auto;
-  max-width: 100%;
-  background: rgba(16, 16, 24, 0.92);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  width: max-content;
+  max-width: calc(100% - 12px);
+  background: rgba(16, 16, 24, 0.97);
   border: 1px solid rgba(245, 197, 66, 0.28);
-  border-radius: 18px;
-  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.4);
-  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+  padding: 3px;
 }
-.fh-taskbar-inner::-webkit-scrollbar { display: none; }
-.fh-taskbar-link {
-  flex: 1 0 auto;
-  min-width: 72px;
-  min-height: 48px;
+.fh-start-btn {
+  flex: none;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid rgba(245, 197, 66, 0.35);
+  border-radius: 8px;
+  background: rgba(28, 28, 40, 0.95);
+  color: #f5c542;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.fh-start-btn[aria-expanded="true"],
+.fh-start-btn:hover { background: #f5c542; color: #0f0f14; }
+.fh-start-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 197, 66, 0.28);
+  background: rgba(16, 16, 24, 0.98);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  z-index: 2;
+}
+.fh-start-menu[hidden] { display: none !important; }
+.fh-start-item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
+  gap: 8px;
+  min-height: 36px;
   padding: 6px 10px;
-  border-radius: 14px;
+  border-radius: 8px;
+  color: #e6e6ee;
+  text-decoration: none;
+  font-size: 13px;
+}
+.fh-start-item:hover,
+.fh-start-item.is-active { background: rgba(245, 197, 66, 0.16); color: #f5c542; }
+.fh-taskbar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: min(70vw, 640px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.fh-taskbar-tabs::-webkit-scrollbar { display: none; }
+.fh-taskbar-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  max-width: 140px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 8px;
   text-decoration: none;
   color: #e6e6ee;
   background: transparent;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
-.fh-taskbar-link:hover {
-  background: rgba(245, 197, 66, 0.12);
-  color: #f5c542;
-}
-.fh-taskbar-link.is-active {
+.fh-taskbar-tab:hover { background: rgba(245, 197, 66, 0.12); color: #f5c542; }
+.fh-taskbar-tab.is-active {
   background: #f5c542;
   color: #0f0f14;
   font-weight: 800;
-  box-shadow: inset 0 0 0 1px rgba(15, 15, 20, 0.12);
 }
-.fh-taskbar-icon { font-size: 18px; line-height: 1; }
-.fh-taskbar-label { font-size: 11px; white-space: nowrap; }
-.fh-taskbar-state {
-  display: block;
-  width: 18px;
-  height: 3px;
-  border-radius: 99px;
-  background: transparent;
-  font-size: 0;
-  line-height: 0;
-  overflow: hidden;
+.fh-taskbar-tab.is-min { opacity: 0.8; }
+.fh-taskbar-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(245, 197, 66, 0.2);
+  color: #f5c542;
+  font-size: 10px;
+  font-weight: 800;
 }
-.fh-taskbar-link.is-open { border-color: rgba(245, 197, 66, 0.45); }
-.fh-taskbar-link.is-open .fh-taskbar-state { background: #f5c542; }
-.fh-taskbar-link.is-min { opacity: 0.82; }
-.fh-taskbar-link.is-min .fh-taskbar-state { background: #8a8a9a; }
-.fh-taskbar-link.is-active .fh-taskbar-state { background: #0f0f14; }
+.fh-taskbar-tab.is-active .fh-taskbar-num { background: #0f0f14; color: #f5c542; }
+.fh-taskbar-icon { font-size: 13px; line-height: 1; }
+.fh-taskbar-label { font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
 
 html.fh-has-catnav body.fh-has-catnav,
 html.fh-has-taskbar body.fh-has-taskbar {
@@ -185,27 +228,10 @@ html.fh-has-taskbar .fh-finance.nav-open .sidebar {
   z-index: 5080;
 }
 
-@media (min-width: 860px) {
-  :root, html.fh-has-catnav { --fh-taskbar-h: 76px; }
-  .fh-taskbar { padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
-  .fh-taskbar-inner {
-    width: max-content;
-    max-width: calc(100% - 24px);
-    gap: 8px;
-    padding: 8px;
-    border-radius: 22px;
-  }
-  .fh-taskbar-link {
-    flex: 0 0 auto;
-    min-width: 88px;
-    min-height: 56px;
-    padding: 8px 16px;
-  }
-  .fh-taskbar-icon { font-size: 20px; }
-  .fh-taskbar-label { font-size: 12px; }
-}
 @media (max-width: 620px) {
-  :root, html.fh-has-catnav { --fh-catnav-h: 52px; --fh-taskbar-h: 62px; }
+  :root, html.fh-has-catnav { --fh-catnav-h: 52px; --fh-taskbar-h: 46px; }
+  .fh-taskbar-tab { max-width: 112px; padding: 3px 7px 3px 5px; }
+  .fh-taskbar-label { font-size: 10px; }
   .fh-catnav-inner { padding: 0 8px; gap: 8px; }
   .fh-catnav-brand { font-size: 13px; }
   .fh-catnav-brand-text { display: none; }
@@ -214,5 +240,5 @@ html.fh-has-taskbar .fh-finance.nav-open .sidebar {
   .fh-catnav-bn { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fh-catnav-link, .fh-taskbar-link { transition: none; }
+  .fh-catnav-link, .fh-taskbar-tab, .fh-start-btn { transition: none; }
 }

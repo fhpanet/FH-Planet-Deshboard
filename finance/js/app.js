@@ -1393,6 +1393,16 @@ function channelColor(channel) {
     if (standalone) {
       window.addEventListener("hashchange", onHashChange);
     }
+    if (!ui.resizeBound && typeof ResizeObserver !== "undefined") {
+      var resizeTimer = 0;
+      ui.resizeObs = new ResizeObserver(function () {
+        if (root && root.closest && root.closest(".fh-win.is-dragging")) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () { /* layout is CSS-only; do not re-render */ }, 200);
+      });
+      ui.resizeObs.observe(root);
+      ui.resizeBound = true;
+    }
     if (!ui.routeName) ui.routeName = "dashboard";
     if (state().settings && $("role-select")) render();
     return { setRoute: setRoute, render: render };

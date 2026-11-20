@@ -88,11 +88,89 @@
     });
   }
 
+  function openIds() {
+    if (global.FHPlanetShell && typeof global.FHPlanetShell.getOpenIds === "function") {
+      return global.FHPlanetShell.getOpenIds();
+    }
+    return FH_PLANET_NAV.map(function (item) { return item.id; }).filter(function (id) {
+      var s = winState(id);
+      return s.open;
+    });
+  }
+
+  function itemById(id) {
+    return FH_PLANET_NAV.filter(function (p) { return p.id === id; })[0];
+  }
+
+  function closeStartMenu() {
+    var menu = document.getElementById("fh-start-menu");
+    var btn = document.getElementById("fh-start-btn");
+    if (menu) { menu.hidden = true; menu.classList.remove("is-open"); }
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleStartMenu(event) {
+    if (event) event.stopPropagation();
+    var menu = document.getElementById("fh-start-menu");
+    var btn = document.getElementById("fh-start-btn");
+    if (!menu || !btn) return;
+    var open = menu.hidden;
+    menu.hidden = !open;
+    menu.classList.toggle("is-open", open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      var first = menu.querySelector("a, button");
+      if (first) first.focus();
+    }
+  }
+
+  function renderStartMenu() {
+    var menu = document.getElementById("fh-start-menu");
+    if (!menu) return;
+    menu.textContent = "";
+    FH_PLANET_NAV.forEach(function (item) {
+      var a = document.createElement("a");
+      a.href = item.href;
+      a.setAttribute("data-nav-id", item.id);
+      a.className = "fh-start-item";
+      var st = winState(item.id);
+      if (st.active) a.classList.add("is-active");
+      a.appendChild(textSpan("fh-start-icon", item.icon || ""));
+      a.appendChild(textSpan("fh-start-label", (item.short || item.label || "")));
+      menu.appendChild(a);
+    });
+  }
+
+  function renderTaskbar() {
+    var dock = document.querySelector("#fh-taskbar .fh-taskbar-tabs");
+    if (!dock) return;
+    dock.textContent = "";
+    var ids = openIds();
+    ids.forEach(function (id, i) {
+      var item = itemById(id) || { id: id, short: id, icon: "", href: "#" };
+      var a = document.createElement("a");
+      a.className = "fh-taskbar-tab";
+      a.href = item.href || "#";
+      a.setAttribute("data-nav-id", id);
+      a.setAttribute("data-tab-index", String(i + 1));
+      a.setAttribute("role", "listitem");
+      a.setAttribute("title", (item.label || item.short || id) + " (Alt+" + (i + 1) + ")");
+      var st = winState(id);
+      if (st.active) { a.classList.add("is-active"); a.setAttribute("aria-current", "page"); }
+      if (st.minimized) a.classList.add("is-min");
+      if (st.open && !st.minimized) a.classList.add("is-open");
+      a.appendChild(textSpan("fh-taskbar-num", String(i + 1)));
+      a.appendChild(textSpan("fh-taskbar-icon", item.icon || ""));
+      a.appendChild(textSpan("fh-taskbar-label", item.short || item.label || id));
+      dock.appendChild(a);
+    });
+    renderStartMenu();
+  }
+
   function render() {
     var nav = document.getElementById("fh-catnav");
     if (nav) fillList(nav.querySelector(".fh-catnav-list"), "top");
-    var bar = document.getElementById("fh-taskbar");
-    if (bar) fillList(bar.querySelector(".fh-taskbar-inner"), "taskbar");
+    renderTaskbar();
     syncSideProjects();
   }
 
@@ -116,6 +194,7 @@
     if (link) {
       openProject(link.getAttribute("data-nav-id"), event);
       closeSidebar();
+      closeStartMenu();
       return;
     }
     var financeHit = event.target.closest('a[href="/finance/"], a[href="/finance"], a.modlink, a.mod-open, a.mod-tile');
@@ -349,11 +428,31 @@
       var bar = document.createElement("nav");
       bar.id = "fh-taskbar";
       bar.className = "fh-taskbar";
-      bar.setAttribute("aria-label", "FH Planet projects");
+      bar.setAttribute("aria-label", "Open windows");
+      var inner = document.createElement("div");
+      inner.className = "fh-taskbar-inner";
+      var start = document.createElement("button");
+      start.type = "button";
+      start.id = "fh-start-btn";
+      start.className = "fh-start-btn";
+      start.setAttribute("aria-expanded", "false");
+      start.setAttribute("aria-controls", "fh-start-menu");
+      start.setAttribute("aria-label", "Start menu");
+      start.setAttribute("title", "Open a project");
+      start.textContent = "⊞";
+      start.addEventListener("click", toggleStartMenu);
+      var menu = document.createElement("div");
+      menu.id = "fh-start-menu";
+      menu.className = "fh-start-menu";
+      menu.setAttribute("role", "menu");
+      menu.hidden = true;
       var dock = document.createElement("div");
-      dock.className = "fh-taskbar-inner";
+      dock.className = "fh-taskbar-tabs";
       dock.setAttribute("role", "list");
-      bar.appendChild(dock);
+      inner.appendChild(start);
+      inner.appendChild(menu);
+      inner.appendChild(dock);
+      bar.appendChild(inner);
       document.body.appendChild(bar);
     }
     document.documentElement.classList.add("fh-has-catnav", "fh-has-taskbar");
@@ -372,6 +471,23 @@
   onReady(function () {
     mount();
     document.addEventListener("click", onNavClick);
+    document.addEventListener("click", function (event) {
+      var menu = document.getElementById("fh-start-menu");
+      var btn = document.getElementById("fh-start-btn");
+      if (!menu || menu.hidden) return;
+      if (menu.contains(event.target) || (btn && btn.contains(event.target))) return;
+      closeStartMenu();
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeStartMenu();
+      if (!event.altKey || event.ctrlKey || event.metaKey) return;
+      var n = event.key === "0" ? 10 : parseInt(event.key, 10);
+      if (!n || n < 1) return;
+      var ids = openIds();
+      if (!ids[n - 1]) return;
+      event.preventDefault();
+      openProject(ids[n - 1]);
+    });
   });
   document.addEventListener("fh-windows-change", render);
   global.FHPlanetNav = { render: render, items: FH_PLANET_NAV, open: openProject, closeSidebar: closeSidebar, openSidebar: openSidebar };

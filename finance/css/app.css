@@ -105,7 +105,7 @@
 .fh-finance .topbar{
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 12px 18px; position: sticky; top: 0; z-index: 15;
-  background: rgba(243, 245, 251, .92); backdrop-filter: blur(12px);
+  background: rgba(243, 245, 251, .97);
   border-bottom: 1px solid transparent;
 }
 .fh-finance .icon-btn, .fh-finance .back{

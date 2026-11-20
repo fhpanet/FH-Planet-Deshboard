@@ -15,6 +15,10 @@
   var financeLoading = null;
   var drag = null;
   var resize = null;
+  var openedIds = [];
+  var rafId = 0;
+  var rafWork = null;
+  var hadStore = false;
   var ready = false;
 
   var TITLES = {
@@ -110,6 +114,17 @@
     if (zTop > MAX_Z) zTop = MAX_Z;
     if (data && data.active && model[data.active]) activeId = data.active;
     if (data && data.zTop) zTop = Math.max(zTop, data.zTop);
+    if (data) {
+      hadStore = true;
+      if (Array.isArray(data.opened)) {
+        openedIds = data.opened.filter(function (id) { return model[id] && model[id].state !== "closed"; });
+      } else {
+        openedIds = ids.filter(function (id) { return model[id] && model[id].state !== "closed"; });
+      }
+    } else {
+      hadStore = false;
+      openedIds = [];
+    }
   }
 
   function num(v, fallback) {
@@ -121,8 +136,31 @@
     var windows = {};
     projects().forEach(function (id) { if (model[id]) windows[id] = model[id]; });
     try {
-      localStorage.setItem(STORAGE, JSON.stringify({ version: 1, active: activeId, zTop: zTop, windows: windows }));
+      localStorage.setItem(STORAGE, JSON.stringify({ version: 1, booted: true, active: activeId, zTop: zTop, opened: openedIds, windows: windows }));
     } catch (err) {}
+  }
+
+  function rememberOpened(id) {
+    if (openedIds.indexOf(id) === -1) openedIds.push(id);
+  }
+
+  function forgetOpened(id) {
+    openedIds = openedIds.filter(function (x) { return x !== id; });
+  }
+
+  function getOpenIds() {
+    return openedIds.filter(function (id) { return model[id] && model[id].state !== "closed"; });
+  }
+
+  function scheduleFrame(fn) {
+    rafWork = fn;
+    if (rafId) return;
+    rafId = requestAnimationFrame(function () {
+      rafId = 0;
+      var work = rafWork;
+      rafWork = null;
+      if (work) work();
+    });
   }
 
   function emit() {
@@ -292,6 +330,7 @@
     if (maxBtn) maxBtn.hidden = !!showRestore;
     if (restBtn) restBtn.hidden = !showRestore;
     if (hidden) return;
+    if (drag || resize) return;
     var area = workArea();
     if (phone || st.state === "maximized") {
       win.style.left = area.left + "px";
@@ -307,6 +346,8 @@
     }
     win.style.right = "auto";
     win.style.bottom = "auto";
+    win.style.transform = "";
+    win.style.transformOrigin = "";
     win.style.zIndex = String(st.z || BASE_Z);
   }
 
@@ -367,8 +408,9 @@
     var st = model[id];
     var phone = isPhone();
     if (phone) minimizeOthers(id);
+    if (st.state === "closed") rememberOpened(id);
     if (st.state === "closed" || st.state === "minimized") {
-      st.state = phone ? "maximized" : (st.nw ? "normal" : "normal");
+      st.state = phone ? "maximized" : "normal";
       if (!phone) {
         st.x = st.nx != null ? st.nx : st.x;
         st.y = st.ny != null ? st.ny : st.y;
@@ -443,7 +485,39 @@
   }
 
   function close(id) {
-    minimize(id);
+    if (!model[id]) return;
+    if (model[id].state === "normal") snapshotNormal(id);
+    model[id].state = "closed";
+    forgetOpened(id);
+    apply(id);
+    if (activeId === id) {
+      activeId = null;
+      var top = null, z = -1;
+      getOpenIds().forEach(function (other) {
+        var s = model[other];
+        if (s && (s.state === "normal" || s.state === "maximized") && s.z > z) {
+          z = s.z; top = other;
+        }
+      });
+      if (top) focus(top, false);
+      else {
+        document.body.removeAttribute("data-fh-active-win");
+        emit();
+        saveStore();
+      }
+    } else {
+      emit();
+      saveStore();
+    }
+  }
+
+  function endGestureStyles(win) {
+    if (!win) return;
+    win.classList.remove("is-dragging", "is-resizing");
+    win.style.willChange = "";
+    win.style.transform = "";
+    win.style.transformOrigin = "";
+    win.style.pointerEvents = "";
   }
 
   function onDragStart(event, id) {
@@ -454,8 +528,18 @@
     if (!st || st.state === "maximized") return;
     focus(id, false);
     var win = nodes[id];
-    var rect = win.getBoundingClientRect();
-    drag = { id: id, dx: event.clientX - rect.left, dy: event.clientY - rect.top };
+    drag = {
+      id: id,
+      startX: event.clientX,
+      startY: event.clientY,
+      ox: st.x,
+      oy: st.y,
+      nx: st.x,
+      ny: st.y
+    };
+    win.classList.add("is-dragging");
+    win.style.willChange = "transform";
+    win.style.transformOrigin = "0 0";
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch (err) {}
     event.preventDefault();
   }
@@ -465,18 +549,35 @@
     var st = model[drag.id];
     if (!st) return;
     var area = workArea();
-    st.x = event.clientX - drag.dx;
-    st.y = event.clientY - drag.dy;
-    clamp(st, area);
-    var win = nodes[drag.id];
-    win.style.left = st.x + "px";
-    win.style.top = st.y + "px";
+    var next = { x: drag.ox + (event.clientX - drag.startX), y: drag.oy + (event.clientY - drag.startY), w: st.w, h: st.h };
+    clamp(next, area);
+    drag.nx = next.x;
+    drag.ny = next.y;
+    var tx = next.x - drag.ox;
+    var ty = next.y - drag.oy;
+    scheduleFrame(function () {
+      if (!drag) return;
+      var el = nodes[drag.id];
+      if (el) el.style.transform = "translate3d(" + tx + "px," + ty + "px,0)";
+    });
   }
 
   function onDragEnd() {
     if (!drag) return;
-    snapshotNormal(drag.id);
+    var id = drag.id;
+    var st = model[id];
+    var win = nodes[id];
+    if (st) {
+      st.x = drag.nx;
+      st.y = drag.ny;
+      snapshotNormal(id);
+    }
     drag = null;
+    endGestureStyles(win);
+    if (st && win) {
+      win.style.left = st.x + "px";
+      win.style.top = st.y + "px";
+    }
     saveStore();
   }
 
@@ -486,7 +587,16 @@
     var st = model[id];
     if (!st || st.state === "maximized") return;
     focus(id, false);
-    resize = { id: id, edge: edge, x: event.clientX, y: event.clientY, ox: st.x, oy: st.y, ow: st.w, oh: st.h };
+    var win = nodes[id];
+    resize = {
+      id: id, edge: edge,
+      startX: event.clientX, startY: event.clientY,
+      ox: st.x, oy: st.y, ow: st.w, oh: st.h,
+      nx: st.x, ny: st.y, nw: st.w, nh: st.h
+    };
+    win.classList.add("is-dragging", "is-resizing");
+    win.style.willChange = "transform";
+    win.style.transformOrigin = "0 0";
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch (err) {}
     event.preventDefault();
     event.stopPropagation();
@@ -494,11 +604,9 @@
 
   function onResizeMove(event) {
     if (!resize) return;
-    var st = model[resize.id];
     var edge = resize.edge;
-    var dx = event.clientX - resize.x;
-    var dy = event.clientY - resize.y;
-    var area = workArea();
+    var dx = event.clientX - resize.startX;
+    var dy = event.clientY - resize.startY;
     var x = resize.ox, y = resize.oy, w = resize.ow, h = resize.oh;
     if (edge.indexOf("e") !== -1) w = resize.ow + dx;
     if (edge.indexOf("s") !== -1) h = resize.oh + dy;
@@ -506,15 +614,37 @@
     if (edge.indexOf("n") !== -1) { h = resize.oh - dy; y = resize.oy + dy; }
     if (w < MIN_W) { if (edge.indexOf("w") !== -1) x = resize.ox + (resize.ow - MIN_W); w = MIN_W; }
     if (h < MIN_H) { if (edge.indexOf("n") !== -1) y = resize.oy + (resize.oh - MIN_H); h = MIN_H; }
-    st.x = x; st.y = y; st.w = w; st.h = h;
-    clamp(st, area);
-    apply(resize.id);
+    var next = { x: x, y: y, w: w, h: h };
+    clamp(next, workArea());
+    resize.nx = next.x; resize.ny = next.y; resize.nw = next.w; resize.nh = next.h;
+    var tx = next.x - resize.ox;
+    var ty = next.y - resize.oy;
+    var sx = next.w / resize.ow;
+    var sy = next.h / resize.oh;
+    scheduleFrame(function () {
+      if (!resize) return;
+      var el = nodes[resize.id];
+      if (el) el.style.transform = "translate3d(" + tx + "px," + ty + "px,0) scale(" + sx + "," + sy + ")";
+    });
   }
 
   function onResizeEnd() {
     if (!resize) return;
-    snapshotNormal(resize.id);
+    var id = resize.id;
+    var st = model[id];
+    var win = nodes[id];
+    if (st) {
+      st.x = resize.nx; st.y = resize.ny; st.w = resize.nw; st.h = resize.nh;
+      snapshotNormal(id);
+    }
     resize = null;
+    endGestureStyles(win);
+    if (st && win) {
+      win.style.left = st.x + "px";
+      win.style.top = st.y + "px";
+      win.style.width = st.w + "px";
+      win.style.height = st.h + "px";
+    }
     saveStore();
   }
 
@@ -551,19 +681,25 @@
       return;
     }
     projects().forEach(function (id) { ensure(id); });
-    var hasSavedOpen = projects().some(function (id) { return model[id] && model[id].state !== "closed"; });
+    var hasSavedOpen = getOpenIds().length > 0;
     var target = hashTarget();
-    if (!hasSavedOpen) {
+    if (!hadStore) {
       model.dashboard.state = isPhone() ? "maximized" : "normal";
+      rememberOpened("dashboard");
       if (target && target !== "dashboard") {
         if (isPhone()) model.dashboard.state = "minimized";
-        if (model[target]) model[target].state = isPhone() ? "maximized" : "normal";
+        if (model[target]) {
+          model[target].state = isPhone() ? "maximized" : "normal";
+          rememberOpened(target);
+        }
         activeId = target;
       } else {
         activeId = "dashboard";
       }
     } else if (target) {
       open(target);
+    } else if (!hasSavedOpen) {
+      activeId = null;
     }
     if (isPhone()) {
       var visible = projects().filter(function (id) {
@@ -619,6 +755,7 @@
     restore: restore,
     close: close,
     getState: getState,
+    getOpenIds: getOpenIds,
     isPhone: isPhone,
     openFinance: function () { return open("finance"); },
     closeFinance: function () { minimize("finance"); },
