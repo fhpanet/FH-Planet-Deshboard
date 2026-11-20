@@ -16,7 +16,7 @@ FH Planet is a small static site with two layers:
 | `app.py` | Oracle reporting service (stdlib HTTP, `/reports`). Not published |
 | `fhplanet-reports.service` | User systemd unit for `app.py`. Not published |
 | `finance/` | Static Finance app: `index.html`, `css/app.css`, `js/` |
-| `assets/nav.js`, `assets/nav.css` | Shared top category bar (Dashboard, To Do, Finance). Add a category by editing the list in `assets/nav.js`. |
+| `assets/nav.js`, `assets/nav.css`, `assets/windows.js`, `assets/hub.css` | Shared top bar and bottom taskbar (Dashboard, To Do, Finance, Planning). Finance opens in a hub window (no iframe). Add a category by editing `FH_PLANET_NAV` in `assets/nav.js`. |
 | `_headers` | Security headers for Cloudflare Pages |
 | `.gitlab-ci.yml` | Verify, Cloudflare Pages deploy, manual SSH deploy |
 | `.github/workflows/deploy.yml` | The same pipeline on GitHub |

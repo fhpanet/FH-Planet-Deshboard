@@ -1,0 +1,176 @@
+/* Shared spacing tidy for the dark FH Planet hub (index.html, dash.html). */
+body.fh-hub {
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+}
+body.fh-hub #app {
+  min-width: 0;
+  height: 100%;
+}
+body.fh-hub #app .sidebar {
+  min-width: 0;
+  padding: var(--space-4) var(--space-3);
+  gap: var(--space-3);
+}
+body.fh-hub #app .main {
+  padding: var(--space-4);
+  gap: var(--space-4);
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+body.fh-hub #app .topbar {
+  gap: var(--space-3);
+  align-items: center;
+  min-width: 0;
+}
+body.fh-hub #app .topbar h1 {
+  font-size: 1.25rem;
+  min-width: 0;
+}
+body.fh-hub #app .card,
+body.fh-hub #app .modules-bar {
+  padding: var(--space-4);
+  min-width: 0;
+}
+body.fh-hub #app .card h2,
+body.fh-hub #app .modules-bar h2 {
+  font-size: 1.05rem;
+  margin-bottom: var(--space-3);
+  gap: 8px;
+}
+body.fh-hub #app .card .hint,
+body.fh-hub #app .modules-bar .hint {
+  margin-bottom: var(--space-3);
+  line-height: 1.45;
+}
+body.fh-hub #app .todo-row,
+body.fh-hub #app .row-pad,
+body.fh-hub #app .filters,
+body.fh-hub #app .modebar,
+body.fh-hub #app .sleepbar {
+  gap: var(--space-2);
+}
+body.fh-hub #app .mod-grid { gap: var(--space-3); min-width: 0; }
+body.fh-hub #app .mod-tile,
+body.fh-hub #app .mod-stat,
+body.fh-hub #app .mod-open { min-width: 0; }
+
+/* Planning section */
+body.fh-hub #app .plan-h {
+  font-size: 0.95rem;
+  margin: var(--space-4) 0 var(--space-2);
+  color: var(--amber, #f5c542);
+}
+body.fh-hub #app .plan-principles,
+body.fh-hub #app .plan-next {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+body.fh-hub #app .plan-principles li,
+body.fh-hub #app .plan-next li { line-height: 1.45; }
+body.fh-hub #app .plan-arms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+body.fh-hub #app .plan-arm {
+  background: var(--panel2, #1c1c28);
+  border: 1px solid var(--border, #2a2a3a);
+  border-radius: 12px;
+  padding: var(--space-3);
+  min-width: 0;
+}
+body.fh-hub #app .plan-arm h4 { margin: 0 0 8px; font-size: 15px; color: var(--amber, #f5c542); }
+body.fh-hub #app .plan-arm p { margin: 0; font-size: 13px; color: var(--text, #e6e6ee); line-height: 1.45; }
+body.fh-hub #app .plan-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-left: 2px solid #3a3a4a;
+  margin-left: 10px;
+}
+body.fh-hub #app .plan-timeline li {
+  position: relative;
+  padding: 0 0 0 var(--space-4);
+  min-width: 0;
+}
+body.fh-hub #app .plan-timeline li::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--amber, #f5c542);
+  box-shadow: 0 0 0 3px rgba(245, 197, 66, 0.2);
+}
+body.fh-hub #app .plan-ph {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+body.fh-hub #app .plan-pno { font-weight: 800; }
+body.fh-hub #app .plan-pst {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #242432;
+  color: var(--muted, #8a8a9a);
+}
+body.fh-hub #app .plan-timeline h4 { margin: 0 0 4px; font-size: 14px; }
+body.fh-hub #app .plan-timeline p { margin: 0; font-size: 13px; color: var(--muted, #8a8a9a); line-height: 1.4; }
+
+@media (max-width: 900px) {
+  body.fh-hub #app .plan-arms { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  body.fh-hub #app { flex-direction: column; }
+  html.fh-has-catnav body.fh-hub #app > .sidebar,
+  html.fh-has-catnav body.fh-hub #app > .sidebar,
+  body.fh-hub #app .sidebar {
+    position: relative !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: none;
+    border-bottom: 1px solid var(--border, #2a2a3a);
+    padding: 8px 10px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.fh-hub #app .sidebar .logo { display: none; }
+  body.fh-hub #app .sidebar .nav {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+    gap: 6px;
+  }
+  body.fh-hub #app .sidebar .nav button,
+  body.fh-hub #app .sidebar .nav a.modlink {
+    flex: none;
+    white-space: nowrap;
+    padding: 10px 12px;
+    min-height: 40px;
+  }
+  body.fh-hub #app .main { padding: var(--space-3); gap: var(--space-3); }
+  body.fh-hub #app .topbar h1 { font-size: 17px; }
+}

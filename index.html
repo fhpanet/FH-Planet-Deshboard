@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FH Planet — ড্যাশবোর্ড</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='14' width='64' height='64' fill='%23f5c542'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='22' font-family='sans-serif' fill='%23110'%3EFH%3C/text%3E%3C/svg%3E">
 <style>
@@ -183,6 +183,8 @@
   }
 </style>
 <link rel="stylesheet" href="/assets/nav.css">
+<link rel="stylesheet" href="/assets/hub.css">
+<link rel="stylesheet" href="/assets/windows.css">
 </head>
 <body>
 <div class="app" id="app">
@@ -190,6 +192,7 @@
     <div class="logo"><span class="lamp">🪐</span> FH Planet</div>
     <div class="nav" id="nav">
       <a class="modlink" href="/finance/"><span class="icon">💸</span> ফাইন্যান্স</a>
+      <button data-tab="planning"><span class="icon">🗺️</span> পরিকল্পনা</button>
       <button data-tab="todo"><span class="icon">📋</span> টড়ো</button>
       <button data-tab="routine"><span class="icon">⏱️</span> রুটিন / ঘুম</button>
       <button data-tab="reminders"><span class="icon">🔔</span> রিমাইন্ডার</button>
@@ -219,6 +222,83 @@
       </div>
       <p class="hint" id="fin-sync">No Finance ledger in this browser yet.</p>
     </section>
+
+    <section class="card plan-section" id="view-planning">
+      <h2>🗺️ FH Organization Planning</h2>
+      <p class="hint">সারাংশ মাস্টার রোডম্যাপ ও সংশ্লিষ্ট পরিকল্পনা নোট থেকে নেওয়া। নতুন তারিখ বা সংখ্যা যোগ করা হয়নি। এই পাতা পাবলিক, তাই গোপন তথ্য এখানে নেই।</p>
+
+      <h3 class="plan-h">লক্ষ্য ও নীতি</h3>
+      <p><strong>FH Planet</strong> একটি All-in-One Personal Operating System: One System → Multiple Departments → Independent Modules → Connected Data → Unified Administration। Finance Department এই ব্যবস্থার প্রথম পূর্ণ বিভাগ। কনসোলিডেটেড মাস্টার রোডম্যাপ v1.0 (২০ নভেম্বর ২০২৬, Asia/Dhaka)। স্লোগান: “One System, Connected Intelligence, Unified Control.”</p>
+      <ul class="plan-principles">
+        <li><strong>One Source of Truth</strong> — প্রতিটি গুরুত্বপূর্ণ তথ্যের একটি নির্ধারিত মূল উৎস; সারাংশ unified ledger থেকে আসবে।</li>
+        <li><strong>No Silent Change</strong> — কোনো গুরুত্বপূর্ণ পরিবর্তন ইতিহাস ছাড়া হবে না।</li>
+        <li><strong>Permission Before Action</strong> — অনুমতি যাচাই ছাড়া সংবেদনশীল কাজ হবে না।</li>
+        <li><strong>Trace Every Link</strong> — প্রতিটি তথ্যের উৎস, সম্পর্ক ও ব্যবহারের ইতিহাস অনুসরণ করা যাবে।</li>
+        <li><strong>Recover Before Expand</strong> — Backup ও Recovery যাচাই না করে বড় পরিবর্তন চালু হবে না।</li>
+      </ul>
+
+      <h3 class="plan-h">তিনটি বাহু</h3>
+      <div class="plan-arms">
+        <article class="plan-arm">
+          <h4>FH Organization</h4>
+          <p>A-Party / Apex Organization। Financial Management System-এর মালিকানা এই সংস্থার; আইডেনটিটি মডেলে মাল্টি-কোম্পানি সাপোর্ট আছে।</p>
+        </article>
+        <article class="plan-arm">
+          <h4>FH Academy</h4>
+          <p>রোডম্যাপে FH Organization-এর পাশাপাশি নামকরা। ভবিষ্যতে FH Academy-র নতুন প্রজেক্টে পেমেন্ট দরকার হলে আলাদা সিস্টেম না বানিয়ে Payment-Ready কাঠামোতে যুক্ত করা যাবে।</p>
+        </article>
+        <article class="plan-arm">
+          <h4>FH Vault</h4>
+          <p>মাস্টার অ্যাডমিন গ্রাউন্ডের নোটে (২৭ অক্টোবর ২০২৬) প্রতি প্রজেক্টে এনক্রিপ্টেড ভল্ট ফাইল (শুধু ciphertext, কখনো plaintext নয়) রাখার পরিকল্পনা আছে; সেই গ্রাউন্ড তখনো নির্মিত হয়নি। খোলা প্রশ্ন: ভল্ট ফরম্যাট (FH Vault export?), অ্যাকাউন্ট লিংক, এবং কে খুলতে পারবে। শেয়ারড নোটে FH Vault v0.7.0 একটি সিকিউরিটি রিভিউয়ের পর তৈরি হয়েছে বলে লিপিবদ্ধ (১২ নভেম্বর ২০২৬)।</p>
+        </article>
+      </div>
+
+      <h3 class="plan-h">রোডম্যাপ (Phase 0–5)</h3>
+      <p class="hint">সোর্সে কোনো ধাপ সম্পন্ন বলা হয়নি, তাই সবগুলো “পরিকল্পিত” হিসেবে দেখানো হয়েছে।</p>
+      <ol class="plan-timeline">
+        <li>
+          <div class="plan-ph"><span class="plan-pno">Phase 0</span><span class="plan-pst">পরিকল্পিত · P0</span></div>
+          <h4>ভিত্তি, সুরক্ষা ও টেস্ট হাইজেন</h4>
+          <p>Lean স্কিমা, পার্টি রেজিস্ট্রি, অডিট ট্রেল, ব্যাকআপ restore ড্রাই-রান, এবং ডাবল-কাউন্টিংয়ের তিনটি টেস্ট কেস।</p>
+        </li>
+        <li>
+          <div class="plan-ph"><span class="plan-pno">Phase 1</span><span class="plan-pst">পরিকল্পিত · P0 / P1</span></div>
+          <h4>Foundation &amp; Core Ledger</h4>
+          <p>ডাবল-এন্ট্রি লেজার, স্ট্যাটাস মেশিন, Finance Dashboard ও Central Cash Box ভিউ, ম্যানুয়াল আয়-ব্যয়।</p>
+        </li>
+        <li>
+          <div class="plan-ph"><span class="plan-pno">Phase 2</span><span class="plan-pst">পরিকল্পিত · P1</span></div>
+          <h4>Accounts, Merchants, Hierarchy, Grouping, Loans</h4>
+          <p>অ্যাকাউন্ট রেজিস্ট্রি, Bank &amp; MFS Switchboard, Merchant, লেনদেন গ্রুপিং, এবং খাতা-লোন।</p>
+        </li>
+        <li>
+          <div class="plan-ph"><span class="plan-pno">Phase 3</span><span class="plan-pst">পরিকল্পিত · P1</span></div>
+          <h4>Statement Import, SMS Auto-Entry, Unallocated Zone</h4>
+          <p>স্টেটমেন্ট মিল, SMS অটো-এন্ট্রি (OTP ব্লক), Unallocated Zone, এবং lightweight / Gen UI টগল।</p>
+        </li>
+        <li>
+          <div class="plan-ph"><span class="plan-pno">Phase 4</span><span class="plan-pst">পরিকল্পিত · P1 / P2</span></div>
+          <h4>Plan, Alerts, Payment-Ready, Roles &amp; Customer Portal</h4>
+          <p>বাজেট ও অ্যালার্ট, অনুমোদন-গেটেড পেমেন্ট স্লট, রোল UI এবং কাস্টমার-লেয়ার পোর্টাল।</p>
+        </li>
+        <li>
+          <div class="plan-ph"><span class="plan-pno">Phase 5</span><span class="plan-pst">পরিকল্পিত · P0 (backup) / P2–P3</span></div>
+          <h4>Hyperlinks, Hermes Control, Audit / Backup, Integration</h4>
+          <p>স্বাধীন Financial Department রুট, Hermes কন্ট্রোল, ভার্সনড ব্যাকআপ-রিস্টোর, এবং অনুমোদিত Echo রিভিউ।</p>
+        </li>
+      </ol>
+
+      <h3 class="plan-h">পরবর্তী কাজ</h3>
+      <ul class="plan-next">
+        <li>Phase 0-এর স্কিমা ও তিনটি ডাবল-কাউন্টিং টেস্ট কেস দিয়ে শুরু, তারপর Phase 1 Core Ledger।</li>
+        <li>ডেটাবেস স্কিমা ও ব্যাকএন্ড API তৈরি (Transaction Log, Central Cash Box, Account Hub, Merchant, Plan)।</li>
+        <li>Financial Department ওয়েব ইন্টারফেস এবং অন্যান্য পেজ থেকে হাইপারলিংক যুক্ত করা।</li>
+        <li>এক্সটার্নাল সাইটের জন্য নিরাপদ Request Link এন্ডপয়েন্ট।</li>
+        <li>Hermes Main Dashboard-এ কন্ট্রোল, অডিট ও অ্যালার্ট ইন্টিগ্রেশন।</li>
+        <li>মাস্টার অ্যাডমিন গ্রাউন্ডে প্রজেক্ট রেকর্ড ও ডকুমেন্ট গ্যালারি — নোট আছে, এখনো নির্মিত নয়।</li>
+      </ul>
+    </section>
+
     <section class="card" id="view-todo">
       <h2>📋 টড়ো</h2>
       <div class="todo-row">
@@ -684,5 +764,6 @@ setInterval(()=>{
 })();
 </script>
 <script src="/assets/nav.js" defer></script>
+<script src="/assets/windows.js" defer></script>
 </body>
 </html>

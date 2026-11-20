@@ -2,67 +2,73 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FH Planet Finance — FH Organization</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='14' width='64' height='64' fill='%235b4bff'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='26' font-family='sans-serif' fill='white'%3EFH%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="/assets/nav.css">
+<link rel="stylesheet" href="/assets/windows.css">
+<link rel="stylesheet" href="css/app.css">
+<style>html,body{height:100%;margin:0;background:#f3f5fb;}</style>
 </head>
 <body>
-<div class="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div class="mark">FH</div>
-      <div>
-        <strong>FH Planet</strong>
-        <span>FH Organization · FH Academy</span>
-      </div>
-    </div>
-    <div class="dept">
-      <div class="dept-title">Finance Department</div>
-      <div class="dept-sub">স্বাধীন আর্থিক বিভাগ · FIN-ROOT-001</div>
-    </div>
-    <nav class="nav" id="nav" aria-label="Finance modules"></nav>
-    <div class="toggles" id="toggles"></div>
-    <div class="side-foot">এক Unified Ledger · নমুনা অঙ্ক</div>
-  </aside>
-  <div class="workspace">
-    <header class="topbar">
-      <button class="icon-btn" id="menu-btn" type="button" aria-label="Open menu">Menu</button>
-      <a class="back" href="/">← FH Planet</a>
-      <label class="search">
-        <input id="global-search" type="search" placeholder="Search transactions, TrxID, pass, tags…" autocomplete="off">
-      </label>
-      <div class="top-actions">
-        <span class="sample">Sample Preview Data · নমুনা ডেটা</span>
-        <label class="role">Preview
-          <select id="role-select" aria-label="Role preview">
-            <option value="supreme">Admin / Supreme</option>
-            <option value="editor">Editor</option>
-            <option value="auditor">Auditor</option>
-            <option value="customer">Customer layer</option>
-          </select>
-        </label>
-        <button class="primary" id="quick-add" type="button">+ Quick Add</button>
-        <div class="user">
-          <span class="avatar">SR</span>
-          <span><b>Sourav</b><small id="role-label">Supreme Admin</small></span>
+<div class="fh-finance" id="fh-finance-root" data-fh-finance-standalone>
+  <div class="app">
+    <aside class="sidebar" id="fh-fin-sidebar">
+      <div class="brand">
+        <div class="mark">FH</div>
+        <div>
+          <strong>FH Planet</strong>
+          <span>FH Organization · FH Academy</span>
         </div>
       </div>
-    </header>
-    <main class="view" id="view"></main>
-    <footer class="foot" id="foot"></footer>
+      <div class="dept">
+        <div class="dept-title">Finance Department</div>
+        <div class="dept-sub">স্বাধীন আর্থিক বিভাগ · FIN-ROOT-001</div>
+      </div>
+      <nav class="nav" id="fh-fin-nav" aria-label="Finance modules"></nav>
+      <div class="toggles" id="fh-fin-toggles"></div>
+      <div class="side-foot">এক Unified Ledger · নমুনা অঙ্ক</div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-btn" id="fh-fin-menu-btn" type="button" aria-label="Open menu">Menu</button>
+        <a class="back" href="/">← FH Planet</a>
+        <label class="search">
+          <input id="fh-fin-global-search" type="search" placeholder="Search transactions, TrxID, pass, tags…" autocomplete="off">
+        </label>
+        <div class="top-actions">
+          <span class="sample">Sample Preview Data · নমুনা ডেটা</span>
+          <label class="role">Preview
+            <select id="fh-fin-role-select" aria-label="Role preview">
+              <option value="supreme">Admin / Supreme</option>
+              <option value="editor">Editor</option>
+              <option value="auditor">Auditor</option>
+              <option value="customer">Customer layer</option>
+            </select>
+          </label>
+          <button class="primary" id="fh-fin-quick-add" type="button">+ Quick Add</button>
+          <div class="user">
+            <span class="avatar">SR</span>
+            <span><b>Sourav</b><small id="fh-fin-role-label">Supreme Admin</small></span>
+          </div>
+        </div>
+      </header>
+      <main class="view" id="fh-fin-view"></main>
+      <footer class="foot" id="fh-fin-foot"></footer>
+    </div>
   </div>
+  <div class="scrim" id="fh-fin-scrim" hidden></div>
+  <aside class="drawer" id="fh-fin-drawer" aria-label="Quick add"></aside>
+  <div class="modal-back" id="fh-fin-modal" hidden></div>
+  <div class="toast" id="fh-fin-toast" hidden role="status"></div>
 </div>
-<div class="scrim" id="scrim" hidden></div>
-<aside class="drawer" id="drawer" aria-label="Quick add"></aside>
-<div class="modal-back" id="modal" hidden></div>
-<div class="toast" id="toast" hidden role="status"></div>
 <noscript>FH Planet Finance needs JavaScript. Nothing is sent to a server; the ledger stays in this browser.</noscript>
 <script src="js/format.js"></script>
 <script src="js/sms.js"></script>
 <script src="js/store.js"></script>
 <script src="js/app.js"></script>
+<script>window.FHFinance.mount(document.getElementById("fh-finance-root"));</script>
 <script src="/assets/nav.js" defer></script>
+<script src="/assets/windows.js" defer></script>
 </body>
 </html>

@@ -2,6 +2,39 @@
 (function () {
   var F = window.FHFormat;
   var S = window.FHStore;
+
+  var root = null;
+  var standalone = false;
+  var bound = false;
+  var IDP = "fh-fin-";
+
+  function $(id) {
+    if (!root) return null;
+    return root.querySelector("#" + IDP + id) || root.querySelector("#" + id);
+  }
+
+  function nid(el) {
+    if (!el) return "";
+    var id = el.id || "";
+    return id.indexOf(IDP) === 0 ? id.slice(IDP.length) : id;
+  }
+
+  function setRoute(name) {
+    name = name || "dashboard";
+    if (!routeAllowed(name)) {
+      name = "dashboard";
+    }
+    if (standalone) {
+      var next = "#/" + name;
+      if ((location.hash || "") !== next) {
+        location.hash = next;
+        return;
+      }
+    }
+    ui.routeName = name;
+    render();
+  }
+
   var ui = {
     range: 30,
     txTab: "log",
@@ -50,8 +83,11 @@
   function state() { return S.getState(); }
 
   function route() {
-    var name = (location.hash || "").replace(/^#\/?/, "").split("?")[0];
-    return name || "dashboard";
+    if (standalone) {
+      var name = (location.hash || "").replace(/^#\/?/, "").split("?")[0];
+      return name || "dashboard";
+    }
+    return ui.routeName || "dashboard";
   }
 
   function routeAllowed(name) {
@@ -105,7 +141,7 @@
   }
 
   function toast(message) {
-    var el = document.getElementById("toast");
+    var el = $("toast");
     el.textContent = message;
     el.hidden = false;
     clearTimeout(toast.timer);
@@ -178,18 +214,18 @@
     if (ui.suspend) return;
     var name = route();
     if (!routeAllowed(name)) {
-      if ((location.hash || "") !== "#/dashboard") {
-        location.hash = "#/dashboard";
+      if (route() !== "dashboard") {
+        setRoute("dashboard");
         return;
       }
       name = "dashboard";
     }
     paintNav(name);
     paintChrome(name);
-    document.getElementById("view").innerHTML = (viewOf(name) || viewDashboard)();
+    $("view").innerHTML = (viewOf(name) || viewDashboard)();
     paintFooter();
     if (ui.drawer) paintDrawer();
-    else document.getElementById("drawer").innerHTML = "";
+    else $("drawer").innerHTML = "";
     if (ui.modal) paintModal();
     else closeModal(true);
   }
@@ -197,7 +233,7 @@
   function paintNav(name) {
     var settings = state().settings;
     var role = settings.role;
-    document.getElementById("nav").innerHTML = NAV.filter(function (item) {
+    $("nav").innerHTML = NAV.filter(function (item) {
       if (item.module && !settings.modules[item.module]) return false;
       if (role === "customer" && ["dashboard", "transactions", "loans", "roles"].indexOf(item.route) === -1) return false;
       if (role === "customer" && item.route === "loans" && !settings.modules.loans) return false;
@@ -207,7 +243,7 @@
         esc(item.label) + '<span class="nid">' + esc(item.id) + "</span></a>";
     }).join("");
     var canToggle = S.can("toggle");
-    document.getElementById("toggles").innerHTML = "<h3>LIGHTWEIGHT MODULE TOGGLES</h3>" + TOGGLES.map(function (item) {
+    $("toggles").innerHTML = "<h3>LIGHTWEIGHT MODULE TOGGLES</h3>" + TOGGLES.map(function (item) {
       var on = !!settings.modules[item[0]];
       return '<button type="button" class="toggle" data-action="toggle-module" data-module="' + item[0] + '" aria-pressed="' + (on ? "true" : "false") + '"' + (canToggle ? "" : " disabled") + ">" +
         "<span>" + esc(item[1]) + '</span><span class="track"><i></i></span></button>';
@@ -217,16 +253,16 @@
   function paintChrome() {
     var role = state().settings.role;
     var labels = { supreme: "Supreme Admin", editor: "Editor", auditor: "Auditor", customer: "Customer layer" };
-    document.getElementById("role-label").textContent = labels[role] || role;
-    var select = document.getElementById("role-select");
+    $("role-label").textContent = labels[role] || role;
+    var select = $("role-select");
     select.value = role;
     var customerOption = select.querySelector('option[value="customer"]');
     customerOption.disabled = !state().settings.modules.customerPortal;
-    document.getElementById("quick-add").hidden = !S.can("create");
+    $("quick-add").hidden = !S.can("create");
   }
 
   function paintFooter() {
-    document.getElementById("foot").innerHTML =
+    $("foot").innerHTML =
       '<div><a href="/">FH Planet</a><a href="#/request">Logistics → request</a><a href="/">Operations</a><a href="#/roles">Admin</a><a href="#/reports">Reports</a><a href="#/request">External Request Link</a></div>' +
       "<div>FH Planet — Finance Department · Lightweight UI · " + esc(F.formatDate(F.todayISO())) + " · Asia/Dhaka</div>";
   }
@@ -358,7 +394,7 @@
     var head = "<tr>" + (selectable ? "<th></th>" : "") + "<th>Description / Party</th><th>Channel</th><th>Category</th><th>Tags</th><th>Group / Pass</th><th>Amount</th><th>Status</th><th></th></tr>";
     var body = rows.map(function (tx) { return txRow(tx, selectable); }).join("");
     if (!rows.length) body = '<tr><td colspan="8" class="muted">No rows match.</td></tr>';
-    return '<div class="table-wrap"><table><thead>' + head + '</thead><tbody id="tx-body">' + body + "</tbody></table></div>";
+    return '<div class="table-wrap"><table><thead>' + head + '</thead><tbody id="fh-fin-tx-body">' + body + "</tbody></table></div>";
   }
 
   function txRow(tx, selectable) {
@@ -477,7 +513,7 @@ function channelColor(channel) {
         "<div>" + tagsHtml(group.tags) + "</div>" +
         (open ? groupDetail(group) : "") + "</article>";
     }).join("");
-    var form = S.can("create") ? '<article class="card"><h3>New group</h3><form id="group-form" class="form-grid" autocomplete="off"><label class="field">Group name<input name="name" required maxlength="80"></label><label class="field">Reference / Pass<input name="referenceNo" maxlength="40"></label><label class="field">Admin reference<input name="adminRef" maxlength="40"></label><label class="field">Tags<input name="tags" placeholder="bazaar_market, personal"></label><label class="field full">First note<textarea name="note" rows="2"></textarea></label><div class="field"><button class="primary" type="submit">Create group</button></div></form></article>' : "";
+    var form = S.can("create") ? '<article class="card"><h3>New group</h3><form id="fh-fin-group-form" class="form-grid" autocomplete="off"><label class="field">Group name<input name="name" required maxlength="80"></label><label class="field">Reference / Pass<input name="referenceNo" maxlength="40"></label><label class="field">Admin reference<input name="adminRef" maxlength="40"></label><label class="field">Tags<input name="tags" placeholder="bazaar_market, personal"></label><label class="field full">First note<textarea name="note" rows="2"></textarea></label><div class="field"><button class="primary" type="submit">Create group</button></div></form></article>' : "";
     return list + form;
   }
 
@@ -503,7 +539,7 @@ function channelColor(channel) {
         (S.can("rules") ? '<button type="button" class="ghost small" data-action="toggle-rule" data-id="' + esc(rule.id) + '">' + (rule.enabled ? "On" : "Off") + '</button><button type="button" class="danger small" data-action="delete-rule" data-id="' + esc(rule.id) + '">Remove</button>' : "") +
         "</div>";
     }).join("");
-    var ruleForm = S.can("rules") ? '<form id="rule-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Field<select name="field"><option>description</option><option>party</option><option>channel</option><option>provider</option><option>category</option><option>purpose</option></select></label><label class="field">Operator<select name="operator"><option value="contains">contains</option><option value="equals">equals</option></select></label><label class="field">Value<input name="value" required></label><label class="field">Add tags<input name="addTags" placeholder="personal, private"></label><label class="field">Group name<input name="groupName"></label><label class="field full">Note template<input name="noteTemplate"></label><div class="field"><button class="primary" type="submit">Save rule</button> <button type="button" class="ghost" data-action="run-rules">Run on existing</button></div></form>' : "";
+    var ruleForm = S.can("rules") ? '<form id="fh-fin-rule-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Field<select name="field"><option>description</option><option>party</option><option>channel</option><option>provider</option><option>category</option><option>purpose</option></select></label><label class="field">Operator<select name="operator"><option value="contains">contains</option><option value="equals">equals</option></select></label><label class="field">Value<input name="value" required></label><label class="field">Add tags<input name="addTags" placeholder="personal, private"></label><label class="field">Group name<input name="groupName"></label><label class="field full">Note template<input name="noteTemplate"></label><div class="field"><button class="primary" type="submit">Save rule</button> <button type="button" class="ghost" data-action="run-rules">Run on existing</button></div></form>' : "";
     var sms = "";
     if (state().settings.modules.sms) {
       var parsed = ui.smsParsed;
@@ -517,7 +553,7 @@ function channelColor(channel) {
           (S.can("create") && !dup ? '<div class="actions" style="margin-top:8px"><button type="button" class="ghost" data-action="save-sms" data-status="pending">Save for review</button><button type="button" class="primary" data-action="save-sms" data-status="posted">Post to ledger</button></div>' : "");
       }
       sms = '<article class="card"><div class="card-head"><h2>BD MFS / bank SMS paste</h2></div><p class="muted">Paste a bKash, Nagad, Rocket, Upay, or bank SMS. OTP, PIN, CVV, and verification codes are rejected.</p>' +
-        '<textarea id="sms-text" rows="5" style="width:100%" placeholder="Paste SMS…">' + esc(ui.smsText) + "</textarea>" +
+        '<textarea id="fh-fin-sms-text" rows="5" style="width:100%" placeholder="Paste SMS…">' + esc(ui.smsText) + "</textarea>" +
         '<div class="actions" style="margin-top:8px"><button type="button" class="primary" data-action="parse-sms">Parse</button><button type="button" class="ghost" data-action="sample-sms" data-sample="new">Sample bKash</button><button type="button" class="ghost" data-action="sample-sms" data-sample="dup">Sample duplicate</button><button type="button" class="ghost" data-action="sample-sms" data-sample="otp">Sample OTP (blocked)</button></div>' + preview + "</article>";
     } else {
       sms = '<article class="card"><p class="muted">SMS Auto-Entry is turned off in the lightweight toggles. Rules still run.</p></article>';
@@ -631,7 +667,7 @@ function channelColor(channel) {
     var rows = S.merchantRollup().map(function (row) {
       return "<tr><td>" + esc(row.merchant.name) + '<div class="muted">' + esc(row.merchant.category) + "</div></td><td class=\"amount in\">" + esc(money(row.income)) + "</td><td class=\"amount out\">" + esc(money(row.expense)) + "</td><td class=\"amount\">" + esc(money(row.net)) + "</td></tr>";
     }).join("");
-    var form = S.can("create") ? '<form id="merchant-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Category<input name="category" placeholder="Printing"></label><div class="field"><button class="primary" type="submit">Add merchant</button></div></form>' : "";
+    var form = S.can("create") ? '<form id="fh-fin-merchant-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Category<input name="category" placeholder="Printing"></label><div class="field"><button class="primary" type="submit">Add merchant</button></div></form>' : "";
     return banner("Merchant module", "Income and expense roll up from ledger rows that name the merchant.") +
       '<section class="card">' + form + '<div class="table-wrap"><table><thead><tr><th>Merchant</th><th>Income</th><th>Expense</th><th>Net</th></tr></thead><tbody>' + rows + "</tbody></table></div></section>";
   }
@@ -672,7 +708,7 @@ function channelColor(channel) {
 
   function loanForm() {
     if (!S.can("create")) return "";
-    return '<article class="card"><h3>Open a khata</h3><form id="loan-form" class="form-grid" autocomplete="off"><label class="field">Person / party<input name="party" required></label><label class="field">Contact<input name="contact"></label><label class="field">Side<select name="direction"><option value="given">Given · পাওনা</option><option value="received">Received · দেনা</option></select></label><label class="field">Principal<input name="principal" required inputmode="decimal"></label><label class="field">Charge (once)<input name="charge" inputmode="decimal" value="0"></label><label class="field">Due date<input name="dueDate" type="date"></label><label class="field">Customer ID<input name="customerId" placeholder="CUS-1042"></label><label class="field">Note<input name="note"></label><label class="field"><span>Also post the cash movement</span><select name="disburse"><option value="yes">Yes, post disbursement</option><option value="no">Khata only</option></select></label><div class="field"><button class="primary" type="submit">Save loan</button></div></form><p class="secret-note">A charge increases what is owed once. It is not added again when the disbursement hits the cash box.</p></article>';
+    return '<article class="card"><h3>Open a khata</h3><form id="fh-fin-loan-form" class="form-grid" autocomplete="off"><label class="field">Person / party<input name="party" required></label><label class="field">Contact<input name="contact"></label><label class="field">Side<select name="direction"><option value="given">Given · পাওনা</option><option value="received">Received · দেনা</option></select></label><label class="field">Principal<input name="principal" required inputmode="decimal"></label><label class="field">Charge (once)<input name="charge" inputmode="decimal" value="0"></label><label class="field">Due date<input name="dueDate" type="date"></label><label class="field">Customer ID<input name="customerId" placeholder="CUS-1042"></label><label class="field">Note<input name="note"></label><label class="field"><span>Also post the cash movement</span><select name="disburse"><option value="yes">Yes, post disbursement</option><option value="no">Khata only</option></select></label><div class="field"><button class="primary" type="submit">Save loan</button></div></form><p class="secret-note">A charge increases what is owed once. It is not added again when the disbursement hits the cash box.</p></article>';
   }
 
   function viewPlans() {
@@ -685,7 +721,7 @@ function channelColor(channel) {
         '<div class="progress ' + esc(progress.level) + '" style="margin:8px 0"><span style="width:' + width + '%"></span></div>' +
         "<div>" + esc(money(progress.actual)) + " of " + esc(money(progress.limit)) + " · alert at " + esc(String(plan.thresholdPct)) + "%</div></article>";
     }).join("");
-    var form = S.can("create") ? '<article class="card"><h3>New budget</h3><form id="plan-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Scope<select name="scopeType"><option value="tag">Tag</option><option value="group">Group</option></select></label><label class="field">Tag or group id<input name="scopeId" placeholder="bazaar_market or GRP-1138" required></label><label class="field">Timeframe<select name="timeframe"><option value="monthly">Monthly</option><option value="custom">Custom</option></select></label><label class="field">Start<input type="date" name="start" value="' + esc(F.monthBounds().start) + '"></label><label class="field">End<input type="date" name="end" value="' + esc(F.monthBounds().end) + '"></label><label class="field">Limit<input name="limit" required inputmode="decimal"></label><label class="field">Alert at %<input name="thresholdPct" value="80" inputmode="numeric"></label><div class="field"><button class="primary" type="submit">Save plan</button></div></form></article>' : "";
+    var form = S.can("create") ? '<article class="card"><h3>New budget</h3><form id="fh-fin-plan-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Scope<select name="scopeType"><option value="tag">Tag</option><option value="group">Group</option></select></label><label class="field">Tag or group id<input name="scopeId" placeholder="bazaar_market or GRP-1138" required></label><label class="field">Timeframe<select name="timeframe"><option value="monthly">Monthly</option><option value="custom">Custom</option></select></label><label class="field">Start<input type="date" name="start" value="' + esc(F.monthBounds().start) + '"></label><label class="field">End<input type="date" name="end" value="' + esc(F.monthBounds().end) + '"></label><label class="field">Limit<input name="limit" required inputmode="decimal"></label><label class="field">Alert at %<input name="thresholdPct" value="80" inputmode="numeric"></label><div class="field"><button class="primary" type="submit">Save plan</button></div></form></article>' : "";
     return banner("Budget & Planning · FIN-11", "Plans watch posted debits for a tag or a group.") +
       (alerts.length ? alerts.map(function (alert) { return '<div class="alert ' + (alert.level === "over" ? "over" : "") + '">' + esc(alert.message) + "</div>"; }).join("") : '<div class="callout">No budget alerts right now.</div>') +
       cards + form;
@@ -712,7 +748,7 @@ function channelColor(channel) {
     var perms = ["view", "create", "edit", "post", "reverse", "note", "export", "import", "toggle", "rules", "request"];
     return banner("Roles & access preview", "Switch Admin/Supreme, Editor, Auditor, or the customer layer without a password.") +
       '<section class="card"><p>Use the preview menu in the top bar. Customer layer filters entries and loans to the selected customer id and hides internal notes.</p>' +
-      '<label class="field">Customer id<select id="customer-id">' + customer + '</select></label>' +
+      '<label class="field">Customer id<select id="fh-fin-customer-id">' + customer + '</select></label>' +
       '<div class="table-wrap"><table class="matrix"><thead><tr><th>Action</th><th>This preview</th></tr></thead><tbody>' +
       perms.map(function (perm) { return "<tr><td>" + esc(perm) + "</td><td>" + (S.can(perm) ? "Allowed" : "Hidden") + "</td></tr>"; }).join("") +
       "</tbody></table></div><p class=\"secret-note\">No PIN, CVV, OTP, or password is collected for this preview.</p></section>";
@@ -722,8 +758,8 @@ function channelColor(channel) {
     var can = S.can("import");
     return banner("Hermes control", "Manage, configure, export, and restore. Posted history is not a setting.") +
       '<section class="grid-2"><article class="card"><h3>Backup</h3><p class="muted">JSON holds the ledger, groups, notes, rules, and the audit log.</p><div class="actions"><button type="button" class="primary" data-action="export-json">Download JSON</button><button type="button" class="ghost" data-action="export" data-kind="transactions">CSV transactions</button><button type="button" class="ghost" data-action="export" data-kind="groups">CSV groups</button><button type="button" class="ghost" data-action="export" data-kind="loans">CSV loans</button></div>' +
-      (can ? '<label class="field" style="margin-top:10px">Restore JSON<input id="restore-file" type="file" accept="application/json"></label><button type="button" class="danger" data-action="ask-reset">Restore sample data</button>' : '<p class="muted">Only Admin/Supreme can restore.</p>') +
-      '</article><article class="card"><h3>Display USD rate</h3><p class="muted">Taka per 1 USD. Stored USD amounts stay as entered; only the combined view changes.</p><form id="fx-form" class="form-grid" autocomplete="off"><label class="field">BDT per USD<input name="usdRate" value="' + esc(String(state().settings.usdRate)) + '"' + (S.can("toggle") ? "" : " readonly") + '></label><div class="field"><button class="primary" type="submit"' + (S.can("toggle") ? "" : " disabled") + '>Save rate</button></div></form><p class="secret-note">Module toggles live in the sidebar. Turning one off hides it; it does not delete its records.</p></article></section>';
+      (can ? '<label class="field" style="margin-top:10px">Restore JSON<input id="fh-fin-restore-file" type="file" accept="application/json"></label><button type="button" class="danger" data-action="ask-reset">Restore sample data</button>' : '<p class="muted">Only Admin/Supreme can restore.</p>') +
+      '</article><article class="card"><h3>Display USD rate</h3><p class="muted">Taka per 1 USD. Stored USD amounts stay as entered; only the combined view changes.</p><form id="fh-fin-fx-form" class="form-grid" autocomplete="off"><label class="field">BDT per USD<input name="usdRate" value="' + esc(String(state().settings.usdRate)) + '"' + (S.can("toggle") ? "" : " readonly") + '></label><div class="field"><button class="primary" type="submit"' + (S.can("toggle") ? "" : " disabled") + '>Save rate</button></div></form><p class="secret-note">Module toggles live in the sidebar. Turning one off hides it; it does not delete its records.</p></article></section>';
   }
 
   function viewReports() {
@@ -747,7 +783,7 @@ function channelColor(channel) {
     var rows = state().assets.map(function (asset) {
       return "<tr><td>" + esc(asset.name) + "</td><td>" + esc(asset.kind) + "</td><td>" + esc(money(asset.value, asset.currency)) + "</td><td>" + esc(asset.status) + "</td><td>" + esc(asset.note || "") + "</td></tr>";
     }).join("");
-    var form = S.can("create") ? '<form id="asset-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Kind<input name="kind" value="Equipment"></label><label class="field">Value<input name="value" required inputmode="decimal"></label><label class="field">Note<input name="note"></label><div class="field"><button class="primary" type="submit">Add asset</button></div></form>' : "";
+    var form = S.can("create") ? '<form id="fh-fin-asset-form" class="form-grid" autocomplete="off"><label class="field">Name<input name="name" required></label><label class="field">Kind<input name="kind" value="Equipment"></label><label class="field">Value<input name="value" required inputmode="decimal"></label><label class="field">Note<input name="note"></label><div class="field"><button class="primary" type="submit">Add asset</button></div></form>' : "";
     return banner("Assets & investment", "Asset values are not added to liquid cash.") + '<section class="card">' + form + '<div class="table-wrap"><table><thead><tr><th>Asset</th><th>Kind</th><th>Value</th><th>Status</th><th>Note</th></tr></thead><tbody>' + rows + "</tbody></table></div></section>";
   }
 
@@ -755,7 +791,7 @@ function channelColor(channel) {
     var rows = state().charities.map(function (row) {
       return "<tr><td>" + esc(row.beneficiary) + "</td><td>" + esc(money(row.principal)) + "</td><td>" + esc(money(row.fee)) + "</td><td>" + esc(row.txId) + "</td><td>" + esc(row.note || "") + "</td></tr>";
     }).join("");
-    var form = S.can("create") ? '<form id="charity-form" class="form-grid" autocomplete="off"><label class="field">Beneficiary<input name="beneficiary" required></label><label class="field">Principal<input name="principal" required inputmode="decimal"></label><label class="field">Fee<input name="fee" value="0" inputmode="decimal"></label><label class="field">Note<input name="note"></label><div class="field"><button class="primary" type="submit">Post charity</button></div></form>' : "";
+    var form = S.can("create") ? '<form id="fh-fin-charity-form" class="form-grid" autocomplete="off"><label class="field">Beneficiary<input name="beneficiary" required></label><label class="field">Principal<input name="principal" required inputmode="decimal"></label><label class="field">Fee<input name="fee" value="0" inputmode="decimal"></label><label class="field">Note<input name="note"></label><div class="field"><button class="primary" type="submit">Post charity</button></div></form>' : "";
     return banner("Charity", "The fee is its own charge line. It is not folded into the donation principal.") + '<section class="card">' + form + '<div class="table-wrap"><table><thead><tr><th>Beneficiary</th><th>Principal</th><th>Fee</th><th>Ledger</th><th>Note</th></tr></thead><tbody>' + rows + "</tbody></table></div></section>";
   }
 
@@ -777,7 +813,7 @@ function channelColor(channel) {
     var list = state().requests.map(function (item) {
       return "<tr><td>" + esc(item.purpose) + "</td><td>" + esc(money(item.amount)) + "</td><td>" + esc(item.customerId || "—") + "</td><td>" + esc(item.txId) + "</td><td>Pending</td></tr>";
     }).join("");
-    var form = S.can("request") ? '<form id="request-form" class="form-grid" autocomplete="off"><label class="field">Payee<input name="party" required></label><label class="field">Purpose<input name="purpose" required></label><label class="field">Amount<input name="amount" required inputmode="decimal"></label><label class="field">Customer ID<input name="customerId"' + (state().settings.role === "customer" ? " readonly value=\"" + esc(state().settings.customerId) + "\"" : "") + '></label><label class="field full">Note<textarea name="note" rows="2"></textarea></label><div class="field"><button class="primary" type="submit">Submit request</button></div></form>' : '<p class="muted">This preview cannot file a request.</p>';
+    var form = S.can("request") ? '<form id="fh-fin-request-form" class="form-grid" autocomplete="off"><label class="field">Payee<input name="party" required></label><label class="field">Purpose<input name="purpose" required></label><label class="field">Amount<input name="amount" required inputmode="decimal"></label><label class="field">Customer ID<input name="customerId"' + (state().settings.role === "customer" ? " readonly value=\"" + esc(state().settings.customerId) + "\"" : "") + '></label><label class="field full">Note<textarea name="note" rows="2"></textarea></label><div class="field"><button class="primary" type="submit">Submit request</button></div></form>' : '<p class="muted">This preview cannot file a request.</p>';
     return banner("Request link", "External and cross-page requests land here as pending ledger rows. Nothing is paid automatically.") +
       '<section class="card">' + form + '<div class="table-wrap"><table><thead><tr><th>Purpose</th><th>Amount</th><th>Customer</th><th>Ledger</th><th>Status</th></tr></thead><tbody>' + (list || '<tr><td colspan="5">No requests yet.</td></tr>') + "</tbody></table></div></section>";
   }
@@ -785,24 +821,24 @@ function channelColor(channel) {
   function openDrawer(extra, editId) {
     if (!S.can(editId ? "edit" : "create")) { toast("This preview role cannot add entries."); return; }
     ui.drawer = { id: editId || "", form: extra };
-    document.body.classList.add("drawer-open");
-    document.getElementById("scrim").hidden = false;
+    root.classList.add("drawer-open");
+    $("scrim").hidden = false;
     paintDrawer();
   }
 
   function closeDrawer() {
     ui.drawer = null;
-    document.body.classList.remove("drawer-open");
-    if (!document.body.classList.contains("nav-open")) document.getElementById("scrim").hidden = true;
-    document.getElementById("drawer").innerHTML = "";
+    root.classList.remove("drawer-open");
+    if (!root.classList.contains("nav-open")) $("scrim").hidden = true;
+    $("drawer").innerHTML = "";
   }
 
   function paintDrawer() {
     var form = ui.drawer.form;
     var groups = state().groups;
-    document.getElementById("drawer").innerHTML =
+    $("drawer").innerHTML =
       '<div class="card-head"><h2>' + (ui.drawer.id ? "Edit draft" : "Quick Add") + '</h2><button type="button" class="ghost" data-action="close-drawer">Close</button></div>' +
-      '<form id="tx-form" class="' + (form.direction === "transfer" ? "is-transfer" : "") + '" autocomplete="off"><div class="seg" style="margin-bottom:8px">' +
+      '<form id="fh-fin-tx-form" class="' + (form.direction === "transfer" ? "is-transfer" : "") + '" autocomplete="off"><div class="seg" style="margin-bottom:8px">' +
       ["credit", "debit", "transfer"].map(function (dir) {
         var label = dir === "credit" ? "Income" : dir === "debit" ? "Expense" : "Transfer";
         return '<label class="ghost" style="display:inline-flex;gap:6px;align-items:center"><input type="radio" name="direction" value="' + dir + '"' + (form.direction === dir ? " checked" : "") + "> " + label + "</label>";
@@ -843,7 +879,7 @@ function channelColor(channel) {
   }
 
   function saveDrawer(status) {
-    var form = document.getElementById("tx-form");
+    var form = $("tx-form");
     if (!form) return;
     var data = readForm(form);
     data.tags = String(data.tags || "").split(",").map(function (part) { return part.trim(); }).filter(Boolean);
@@ -878,7 +914,7 @@ function channelColor(channel) {
 
   function closeModal(silent) {
     ui.modal = null;
-    var el = document.getElementById("modal");
+    var el = $("modal");
     el.hidden = true;
     el.innerHTML = "";
     if (!silent) { /* closed by the user */ }
@@ -889,12 +925,12 @@ function channelColor(channel) {
     if (!modal) return;
     var html = "";
     if (modal.kind === "notes") html = notesModal(modal);
-    else if (modal.kind === "reverse") html = '<div class="modal"><h3>Reverse ' + esc(modal.id) + '</h3><p class="muted">The original posted row stays. A matching opposite entry is added.</p><label class="field">Reason<textarea id="modal-reason" rows="3"></textarea></label><div class="actions"><button type="button" class="primary" data-action="do-reverse" data-id="' + esc(modal.id) + '">Post reversal</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
-    else if (modal.kind === "adjust") html = '<div class="modal"><h3>Adjust ' + esc(modal.id) + '</h3><p class="muted">Enter the corrected principal. The difference is posted as a new row.</p><label class="field">Corrected amount<input id="modal-amount" inputmode="decimal"></label><label class="field">Reason<textarea id="modal-reason" rows="3"></textarea></label><div class="actions"><button type="button" class="primary" data-action="do-adjust" data-id="' + esc(modal.id) + '">Post adjustment</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
+    else if (modal.kind === "reverse") html = '<div class="modal"><h3>Reverse ' + esc(modal.id) + '</h3><p class="muted">The original posted row stays. A matching opposite entry is added.</p><label class="field">Reason<textarea id="fh-fin-modal-reason" rows="3"></textarea></label><div class="actions"><button type="button" class="primary" data-action="do-reverse" data-id="' + esc(modal.id) + '">Post reversal</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
+    else if (modal.kind === "adjust") html = '<div class="modal"><h3>Adjust ' + esc(modal.id) + '</h3><p class="muted">Enter the corrected principal. The difference is posted as a new row.</p><label class="field">Corrected amount<input id="fh-fin-modal-amount" inputmode="decimal"></label><label class="field">Reason<textarea id="fh-fin-modal-reason" rows="3"></textarea></label><div class="actions"><button type="button" class="primary" data-action="do-adjust" data-id="' + esc(modal.id) + '">Post adjustment</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
     else if (modal.kind === "group") html = groupModal();
     else if (modal.kind === "archive") html = '<div class="modal"><h3>Archive this draft?</h3><p>The row leaves the active log and stays in the audit trail. Posted rows cannot be archived.</p><div class="actions"><button type="button" class="danger" data-action="do-archive" data-id="' + esc(modal.id) + '">Archive</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
     else if (modal.kind === "reset") html = '<div class="modal"><h3>Restore sample data?</h3><p>This replaces the ledger in this browser with the demo books.</p><div class="actions"><button type="button" class="danger" data-action="do-reset">Restore sample</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
-    var host = document.getElementById("modal");
+    var host = $("modal");
     host.innerHTML = html;
     host.hidden = false;
   }
@@ -905,16 +941,16 @@ function channelColor(channel) {
     for (var i = 0; i < list.length; i++) if (list[i].id === modal.id) row = list[i];
     if (!row) return '<div class="modal"><p>That record is gone.</p></div>';
     var notes = S.visibleNotes(row.notes || []).map(noteBlock).join("") || '<p class="muted">No visible notes yet.</p>';
-    var tagEditor = row.tags && S.can("edit") ? '<label class="field">Tags<input id="modal-tags" value="' + esc((row.tags || []).join(", ")) + '"></label><button type="button" class="ghost" data-action="save-tags" data-kind="' + esc(modal.target) + '" data-id="' + esc(row.id) + '">Save tags</button>' : "<div>" + tagsHtml(row.tags) + "</div>";
-    var composer = S.can("note") ? '<label class="field">New note<textarea id="modal-note" rows="3"></textarea></label><label class="field">Visibility<select id="modal-vis"><option value="internal">Internal</option><option value="customer">Customer-visible</option></select></label><button type="button" class="primary" data-action="save-note" data-kind="' + esc(modal.target) + '" data-id="' + esc(row.id) + '">Add note</button>' : "";
+    var tagEditor = row.tags && S.can("edit") ? '<label class="field">Tags<input id="fh-fin-modal-tags" value="' + esc((row.tags || []).join(", ")) + '"></label><button type="button" class="ghost" data-action="save-tags" data-kind="' + esc(modal.target) + '" data-id="' + esc(row.id) + '">Save tags</button>' : "<div>" + tagsHtml(row.tags) + "</div>";
+    var composer = S.can("note") ? '<label class="field">New note<textarea id="fh-fin-modal-note" rows="3"></textarea></label><label class="field">Visibility<select id="fh-fin-modal-vis"><option value="internal">Internal</option><option value="customer">Customer-visible</option></select></label><button type="button" class="primary" data-action="save-note" data-kind="' + esc(modal.target) + '" data-id="' + esc(row.id) + '">Add note</button>' : "";
     return '<div class="modal"><div class="card-head"><h3>Notes · ' + esc(row.name || row.description || row.party || row.id) + '</h3><button type="button" class="ghost" data-action="close-modal">Close</button></div>' + tagEditor + notes + composer + '<p class="secret-note">Notes are append-only and keep a timestamp.</p></div>';
   }
 
   function groupModal() {
     var ids = selectedIds();
-    return '<div class="modal"><h3>Group ' + ids.length + ' selected</h3><label class="field">Existing group<select id="modal-group"><option value="">Choose…</option>' +
+    return '<div class="modal"><h3>Group ' + ids.length + ' selected</h3><label class="field">Existing group<select id="fh-fin-modal-group"><option value="">Choose…</option>' +
       state().groups.map(function (group) { return '<option value="' + esc(group.id) + '">' + esc(group.name) + "</option>"; }).join("") +
-      '</select></label><label class="field">Or create<input id="modal-new-group" placeholder="Group name"></label><div class="actions"><button type="button" class="primary" data-action="do-link">Link</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
+      '</select></label><label class="field">Or create<input id="fh-fin-modal-new-group" placeholder="Group name"></label><div class="actions"><button type="button" class="primary" data-action="do-link">Link</button><button type="button" class="ghost" data-action="close-modal">Cancel</button></div></div>';
   }
 
   function accountForParsed(parsed) {
@@ -934,34 +970,50 @@ function channelColor(channel) {
     otp: "Your bKash OTP is 482193. Do not share this verification code."
   };
 
-  document.getElementById("menu-btn").addEventListener("click", function () {
-    document.body.classList.toggle("nav-open");
-    document.getElementById("scrim").hidden = !document.body.classList.contains("nav-open") && !document.body.classList.contains("drawer-open");
+  function bindChrome() {
+  $("menu-btn").addEventListener("click", function () {
+    root.classList.toggle("nav-open");
+    $("scrim").hidden = !root.classList.contains("nav-open") && !root.classList.contains("drawer-open");
   });
-  document.getElementById("scrim").addEventListener("click", function () {
-    document.body.classList.remove("nav-open");
+  $("scrim").addEventListener("click", function () {
+    root.classList.remove("nav-open");
     closeDrawer();
   });
-  document.getElementById("quick-add").addEventListener("click", function () { openDrawer(blankForm()); });
-  document.getElementById("role-select").addEventListener("change", function (event) {
+  $("quick-add").addEventListener("click", function () { openDrawer(blankForm()); });
+  $("role-select").addEventListener("change", function (event) {
     var result = S.setRole(event.target.value);
     if (!result.ok) { toast(result.error); event.target.value = state().settings.role; }
   });
-  document.getElementById("global-search").addEventListener("keydown", function (event) {
+  $("global-search").addEventListener("keydown", function (event) {
     if (event.key !== "Enter") return;
     ui.filters.q = event.target.value.trim();
     ui.txTab = "log";
-    if (location.hash !== "#/transactions") location.hash = "#/transactions";
+    if (route() !== "transactions") { setRoute("transactions"); return; }
     else render();
   });
 
-  document.addEventListener("click", function (event) {
+  root.addEventListener("click", function (event) {
+    var routeLink = event.target.closest('a[href^="#/"]');
+    if (routeLink && root.contains(routeLink)) {
+      event.preventDefault();
+      var next = (routeLink.getAttribute("href") || "").replace(/^#\//, "").split("?")[0];
+      if (next) setRoute(next);
+      return;
+    }
+    var homeLink = event.target.closest('a[href="/"]');
+    if (homeLink && root.contains(homeLink) && !standalone) {
+      event.preventDefault();
+      if (window.FHPlanetShell && typeof window.FHPlanetShell.closeFinance === "function") {
+        window.FHPlanetShell.closeFinance();
+      }
+      return;
+    }
     var el = event.target.closest("[data-action]");
-    if (!el) return;
+    if (!el || !root.contains(el)) return;
     var action = el.dataset.action;
     if (el.closest(".nav")) {
-      document.body.classList.remove("nav-open");
-      if (!document.body.classList.contains("drawer-open")) document.getElementById("scrim").hidden = true;
+      root.classList.remove("nav-open");
+      if (!root.classList.contains("drawer-open")) $("scrim").hidden = true;
     }
     var fn = handlers[action];
     if (!fn) return;
@@ -969,33 +1021,33 @@ function channelColor(channel) {
     fn(el, event);
   });
 
-  document.addEventListener("change", function (event) {
+  root.addEventListener("change", function (event) {
     var target = event.target;
     if (target.hasAttribute("data-select")) {
       ui.selected[target.getAttribute("data-select")] = target.checked;
-      var count = document.getElementById("sel-count");
+      var count = $("sel-count");
       if (count) count.textContent = String(selectedIds().length);
       return;
     }
     if (target.hasAttribute("data-filter")) {
       ui.filters[target.getAttribute("data-filter")] = target.value;
-      var body = document.getElementById("tx-body");
+      var body = $("tx-body");
       if (body && route() === "transactions" && ui.txTab === "log") {
         var rows = S.filteredTransactions(ui.filters);
         body.innerHTML = rows.length ? rows.map(function (tx) { return txRow(tx, S.can("edit")); }).join("") : '<tr><td colspan="9" class="muted">No rows match.</td></tr>';
       } else render();
       return;
     }
-    if (target.name === "direction" && target.form && target.form.id === "tx-form") {
+    if (target.name === "direction" && target.form && nid(target.form) === "tx-form") {
       target.form.classList.toggle("is-transfer", target.value === "transfer");
       var category = target.form.querySelector("[name=category]");
       if (category) category.value = target.value === "credit" ? "Income" : target.value === "transfer" ? "Transfer" : "Expense";
     }
-    if (target.id === "customer-id") {
+    if (nid(target) === "customer-id") {
       S.setCustomer(target.value);
       toast("Customer preview set to " + target.value);
     }
-    if (target.id === "restore-file" && target.files && target.files[0]) {
+    if (nid(target) === "restore-file" && target.files && target.files[0]) {
       var reader = new FileReader();
       reader.onload = function () {
         try {
@@ -1013,11 +1065,11 @@ function channelColor(channel) {
     }
   });
 
-  document.addEventListener("input", function (event) {
-    if (event.target.id === "sms-text") ui.smsText = event.target.value;
+  root.addEventListener("input", function (event) {
+    if (nid(event.target) === "sms-text") ui.smsText = event.target.value;
     if (event.target.hasAttribute("data-filter") && event.target.tagName === "INPUT") {
       ui.filters[event.target.getAttribute("data-filter")] = event.target.value;
-      var body = document.getElementById("tx-body");
+      var body = $("tx-body");
       if (body && route() === "transactions" && ui.txTab === "log") {
         var rows = S.filteredTransactions(ui.filters);
         body.innerHTML = rows.length ? rows.map(function (tx) { return txRow(tx, S.can("edit")); }).join("") : '<tr><td colspan="9" class="muted">No rows match.</td></tr>';
@@ -1025,21 +1077,21 @@ function channelColor(channel) {
     }
   });
 
-  document.addEventListener("submit", function (event) {
+  root.addEventListener("submit", function (event) {
     var form = event.target;
-    if (form.id === "group-form") {
+    if (nid(form) === "group-form") {
       event.preventDefault();
       var data = readForm(form);
       data.tags = String(data.tags || "").split(",");
       var result = S.addGroup(data);
       toast(result.ok ? "Group created." : result.error);
-    } else if (form.id === "rule-form") {
+    } else if (nid(form) === "rule-form") {
       event.preventDefault();
       var rule = readForm(form);
       rule.addTags = String(rule.addTags || "").split(",");
       var saved = S.addRule(rule);
       toast(saved.ok ? "Rule saved." : saved.error);
-    } else if (form.id === "loan-form") {
+    } else if (nid(form) === "loan-form") {
       event.preventDefault();
       var loan = readForm(form);
       loan.disburse = loan.disburse !== "no";
@@ -1050,38 +1102,38 @@ function channelColor(channel) {
       var pay = readForm(form);
       var paid = S.addRepayment(form.getAttribute("data-id"), pay);
       toast(paid.ok ? "Repayment posted. Remaining " + money(paid.remaining) : paid.error);
-    } else if (form.id === "plan-form") {
+    } else if (nid(form) === "plan-form") {
       event.preventDefault();
       var plan = S.addPlan(readForm(form));
       toast(plan.ok ? "Plan saved." : plan.error);
-    } else if (form.id === "merchant-form") {
+    } else if (nid(form) === "merchant-form") {
       event.preventDefault();
       var merchant = S.addMerchant(readForm(form));
       toast(merchant.ok ? "Merchant added." : merchant.error);
-    } else if (form.id === "asset-form") {
+    } else if (nid(form) === "asset-form") {
       event.preventDefault();
       var asset = S.addAsset(readForm(form));
       toast(asset.ok ? "Asset noted." : asset.error);
-    } else if (form.id === "charity-form") {
+    } else if (nid(form) === "charity-form") {
       event.preventDefault();
       var charity = S.addCharity(readForm(form));
       toast(charity.ok ? "Charity posted." : charity.error);
-    } else if (form.id === "request-form") {
+    } else if (nid(form) === "request-form") {
       event.preventDefault();
       var request = S.addRequest(readForm(form));
       toast(request.ok ? "Request saved as pending. Nothing was paid." : request.error);
-    } else if (form.id === "fx-form") {
+    } else if (nid(form) === "fx-form") {
       event.preventDefault();
       var fx = S.setUsdRate(readForm(form).usdRate);
       toast(fx.ok ? "Display rate updated." : fx.error);
     }
   });
 
-  document.addEventListener("keydown", function (event) {
+  root.addEventListener("keydown", function (event) {
     if (event.key !== "Escape") return;
     if (ui.modal) closeModal();
     else if (ui.drawer) closeDrawer();
-    document.body.classList.remove("nav-open");
+    root.classList.remove("nav-open");
   });
 
   var handlers = {
@@ -1095,7 +1147,7 @@ function channelColor(channel) {
     go: function (el) {
       var next = el.getAttribute("data-route");
       if (!routeAllowed(next)) { toast("That module is turned off or hidden for this preview."); return; }
-      location.hash = "#/" + next;
+      setRoute(next);
     },
     "open-drawer": function (el) {
       openDrawer(blankForm(el.getAttribute("data-account") ? { accountId: el.getAttribute("data-account"), channel: "cash" } : null));
@@ -1105,7 +1157,7 @@ function channelColor(channel) {
     },
     "close-drawer": function () { closeDrawer(); },
     "add-preset": function (el) {
-      var input = document.querySelector('#tx-form [name="tags"]');
+      var input = root.querySelector("#fh-fin-tx-form [name=\"tags\"]");
       if (!input) return;
       var parts = input.value.split(",").map(function (part) { return part.trim(); }).filter(Boolean);
       if (parts.map(function (part) { return part.toLowerCase(); }).indexOf(el.getAttribute("data-tag")) === -1) parts.push(el.getAttribute("data-tag"));
@@ -1131,13 +1183,13 @@ function channelColor(channel) {
     "ask-adjust": function (el) { openModal({ kind: "adjust", id: el.getAttribute("data-id") }); },
     "ask-archive": function (el) { openModal({ kind: "archive", id: el.getAttribute("data-id") }); },
     "do-reverse": function (el) {
-      var result = S.reverse(el.getAttribute("data-id"), document.getElementById("modal-reason").value);
+      var result = S.reverse(el.getAttribute("data-id"), $("modal-reason").value);
       if (!result.ok) { toast(result.error); return; }
       closeModal();
       toast("Reversal posted.");
     },
     "do-adjust": function (el) {
-      var result = S.adjust(el.getAttribute("data-id"), document.getElementById("modal-amount").value, document.getElementById("modal-reason").value);
+      var result = S.adjust(el.getAttribute("data-id"), $("modal-amount").value, $("modal-reason").value);
       if (!result.ok) { toast(result.error); return; }
       closeModal();
       toast("Adjustment posted.");
@@ -1150,11 +1202,11 @@ function channelColor(channel) {
     notes: function (el) { openModal({ kind: "notes", target: el.getAttribute("data-kind"), id: el.getAttribute("data-id") }); },
     "close-modal": function () { closeModal(); },
     "save-note": function (el) {
-      var result = S.addNote(el.getAttribute("data-kind"), el.getAttribute("data-id"), document.getElementById("modal-note").value, document.getElementById("modal-vis").value);
+      var result = S.addNote(el.getAttribute("data-kind"), el.getAttribute("data-id"), $("modal-note").value, $("modal-vis").value);
       if (!result.ok) toast(result.error);
     },
     "save-tags": function (el) {
-      var result = S.setTags(el.getAttribute("data-kind"), el.getAttribute("data-id"), document.getElementById("modal-tags").value.split(","));
+      var result = S.setTags(el.getAttribute("data-kind"), el.getAttribute("data-id"), $("modal-tags").value.split(","));
       toast(result.ok ? "Tags saved." : result.error);
     },
     "open-group": function (el) {
@@ -1166,8 +1218,8 @@ function channelColor(channel) {
       openModal({ kind: "group" });
     },
     "do-link": function () {
-      var groupId = document.getElementById("modal-group").value;
-      var name = document.getElementById("modal-new-group").value.trim();
+      var groupId = $("modal-group").value;
+      var name = $("modal-new-group").value.trim();
       ui.suspend = true;
       if (name) {
         var created = S.addGroup({ name: name });
@@ -1198,7 +1250,7 @@ function channelColor(channel) {
       toast(result.ok ? "Rules checked " + result.count + " changed rows." : result.error);
     },
     "parse-sms": function () {
-      ui.smsText = document.getElementById("sms-text").value;
+      ui.smsText = $("sms-text").value;
       ui.smsParsed = S.parseSms(ui.smsText);
       render();
     },
@@ -1282,12 +1334,70 @@ function channelColor(channel) {
       toast(result.ok ? "Sample ledger restored." : result.error);
     }
   };
+  }
 
-  window.addEventListener("hashchange", function () {
+  var FINANCE_SHELL = '<div class="app">'
+    + '<aside class="sidebar" id="fh-fin-sidebar">'
+    + '<div class="brand"><div class="mark">FH</div><div><strong>FH Planet</strong><span>FH Organization · FH Academy</span></div></div>'
+    + '<div class="dept"><div class="dept-title">Finance Department</div><div class="dept-sub">স্বাধীন আর্থিক বিভাগ · FIN-ROOT-001</div></div>'
+    + '<nav class="nav" id="fh-fin-nav" aria-label="Finance modules"></nav>'
+    + '<div class="toggles" id="fh-fin-toggles"></div>'
+    + '<div class="side-foot">এক Unified Ledger · নমুনা অঙ্ক</div>'
+    + '</aside>'
+    + '<div class="workspace">'
+    + '<header class="topbar">'
+    + '<button class="icon-btn" id="fh-fin-menu-btn" type="button" aria-label="Open menu">Menu</button>'
+    + '<a class="back" href="/">← FH Planet</a>'
+    + '<label class="search"><input id="fh-fin-global-search" type="search" placeholder="Search transactions, TrxID, pass, tags…" autocomplete="off"></label>'
+    + '<div class="top-actions"><span class="sample">Sample Preview Data · নমুনা ডেটা</span>'
+    + '<label class="role">Preview<select id="fh-fin-role-select" aria-label="Role preview">'
+    + '<option value="supreme">Admin / Supreme</option><option value="editor">Editor</option>'
+    + '<option value="auditor">Auditor</option><option value="customer">Customer layer</option>'
+    + '</select></label>'
+    + '<button class="primary" id="fh-fin-quick-add" type="button">+ Quick Add</button>'
+    + '<div class="user"><span class="avatar">SR</span><span><b>Sourav</b><small id="fh-fin-role-label">Supreme Admin</small></span></div>'
+    + '</div></header>'
+    + '<main class="view" id="fh-fin-view"></main>'
+    + '<footer class="foot" id="fh-fin-foot"></footer>'
+    + '</div></div>'
+    + '<div class="scrim" id="fh-fin-scrim" hidden></div>'
+    + '<aside class="drawer" id="fh-fin-drawer" aria-label="Quick add"></aside>'
+    + '<div class="modal-back" id="fh-fin-modal" hidden></div>'
+    + '<div class="toast" id="fh-fin-toast" hidden role="status"></div>';
+
+  function onHashChange() {
+    if (!standalone) return;
     ui.modal = null;
     closeDrawer();
     render();
-  });
-  S.subscribe(function () { render(); });
-  if (state().settings && document.getElementById("role-select")) render();
+  }
+
+  function mount(containerEl) {
+    if (!containerEl) return null;
+    if (!F || !S) {
+      throw new Error("FH Planet Finance scripts are not loaded.");
+    }
+    root = containerEl;
+    root.classList.add("fh-finance");
+    standalone = root.hasAttribute("data-fh-finance-standalone")
+      || /(?:^|\/)finance\/?$/.test(location.pathname.replace(/index\.html$/i, ""));
+    if (!$("view") || !$("nav") || !$("role-select")) {
+      root.innerHTML = FINANCE_SHELL;
+    }
+    if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+    if (!bound) {
+      bindChrome();
+      S.subscribe(function () { if (root) render(); });
+      bound = true;
+    }
+    if (standalone) {
+      window.addEventListener("hashchange", onHashChange);
+    }
+    if (!ui.routeName) ui.routeName = "dashboard";
+    if (state().settings && $("role-select")) render();
+    return { setRoute: setRoute, render: render };
+  }
+
+  window.FHFinance = { mount: mount };
+
 })();

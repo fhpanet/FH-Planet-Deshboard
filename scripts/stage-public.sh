@@ -24,6 +24,15 @@ test -f dist/finance/js/sms.js
 test -f dist/_headers
 test -f dist/assets/nav.js
 test -f dist/assets/nav.css
+test -f dist/assets/hub.css
+test -f dist/assets/windows.js
+test -f dist/assets/windows.css
+grep -q "FH_PLANET_NAV" dist/assets/nav.js
+grep -q "view-planning" dist/assets/nav.js
+grep -q "FHFinance" dist/finance/js/app.js
+grep -q "fh-finance" dist/finance/css/app.css
+grep -q "id=\"view-planning\"" dist/index.html
+grep -q "id=\"view-todo\"" dist/index.html
 grep -q "FH_PLANET_NAV" dist/assets/nav.js
 grep -q "assets/nav.js" dist/index.html
 grep -q "assets/nav.js" dist/finance/index.html

@@ -1,6 +1,7 @@
-/* FH Planet shared category bar. Edit assets/nav.js to add categories. */
+/* FH Planet shared category bar + project taskbar. Edit assets/nav.js to add items. */
 :root, html.fh-has-catnav {
-  --fh-catnav-h: 58px;
+  --fh-catnav-h: 56px;
+  --fh-taskbar-h: 64px;
 }
 .fh-catnav {
   position: fixed;
@@ -9,10 +10,10 @@
   right: 0;
   z-index: 5000;
   height: var(--fh-catnav-h);
-  background: rgba(16, 16, 24, 0.86);
+  background: rgba(16, 16, 24, 0.92);
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  border-bottom: 1px solid rgba(245, 197, 66, 0.18);
+  border-bottom: 1px solid rgba(245, 197, 66, 0.28);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   color: #e6e6ee;
   font-family: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
@@ -21,18 +22,18 @@
   height: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 12px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 .fh-catnav-brand {
   flex: none;
   color: #f5c542;
-  font-weight: 700;
+  font-weight: 800;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -40,7 +41,7 @@
 .fh-catnav-list {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
   flex: 1;
@@ -54,7 +55,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 12px;
+  min-height: 40px;
+  padding: 6px 14px;
   border-radius: 999px;
   text-decoration: none;
   color: #e6e6ee;
@@ -68,13 +70,13 @@
   color: #f5c542;
 }
 .fh-catnav-link.is-active {
-  background: rgba(245, 197, 66, 0.16);
+  background: #f5c542;
   border-color: #f5c542;
-  color: #f5c542;
-  font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgba(245, 197, 66, 0.25);
+  color: #0f0f14;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.35);
 }
-.fh-catnav-icon { font-size: 15px; line-height: 1; }
+.fh-catnav-icon { font-size: 16px; line-height: 1; }
 .fh-catnav-text {
   display: flex;
   flex-direction: column;
@@ -84,33 +86,122 @@
 .fh-catnav-bn {
   font-size: 10px;
   color: #8a8a9a;
-  font-weight: 400;
+  font-weight: 500;
 }
-.fh-catnav-link.is-active .fh-catnav-bn { color: rgba(245, 197, 66, 0.9); }
+.fh-catnav-link.is-active .fh-catnav-bn { color: #4a3a00; }
 
-html.fh-has-catnav body.fh-has-catnav {
+/* Bottom project taskbar (dock-like on desktop). */
+.fh-taskbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4000;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+  font-family: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
+}
+.fh-taskbar-inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 auto;
+  max-width: 100%;
+  background: rgba(16, 16, 24, 0.92);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid rgba(245, 197, 66, 0.28);
+  border-radius: 18px;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+}
+.fh-taskbar-inner::-webkit-scrollbar { display: none; }
+.fh-taskbar-link {
+  flex: 1 0 auto;
+  min-width: 72px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #e6e6ee;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.fh-taskbar-link:hover {
+  background: rgba(245, 197, 66, 0.12);
+  color: #f5c542;
+}
+.fh-taskbar-link.is-active {
+  background: #f5c542;
+  color: #0f0f14;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(15, 15, 20, 0.12);
+}
+.fh-taskbar-icon { font-size: 18px; line-height: 1; }
+.fh-taskbar-label { font-size: 11px; white-space: nowrap; }
+
+html.fh-has-catnav body.fh-has-catnav,
+html.fh-has-taskbar body.fh-has-taskbar {
   padding-top: var(--fh-catnav-h);
+  padding-bottom: calc(var(--fh-taskbar-h) + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
-html.fh-has-catnav body.fh-has-catnav .sidebar {
-  max-height: calc(100vh - var(--fh-catnav-h));
-}
-html.fh-has-catnav body.fh-has-catnav .app > .sidebar,
-html.fh-has-catnav body.fh-has-catnav #sidebar {
+html.fh-has-catnav body.fh-has-catnav #app > .sidebar {
+  max-height: calc(100vh - var(--fh-catnav-h) - var(--fh-taskbar-h) - env(safe-area-inset-bottom, 0px));
   top: var(--fh-catnav-h);
-  height: calc(100vh - var(--fh-catnav-h));
-}
-html.fh-has-catnav body.fh-has-catnav .workspace > .topbar {
-  top: var(--fh-catnav-h);
+  height: calc(100vh - var(--fh-catnav-h) - var(--fh-taskbar-h) - env(safe-area-inset-bottom, 0px));
 }
 
+/* Overlays belong above the taskbar. */
+html.fh-has-taskbar .fh-finance .drawer,
+html.fh-has-taskbar .fh-finance .modal-back,
+html.fh-has-taskbar .fh-finance .toast {
+  z-index: 5100;
+}
+html.fh-has-taskbar .fh-finance .scrim { z-index: 5050; }
+html.fh-has-taskbar body.nav-open #sidebar,
+html.fh-has-taskbar .fh-finance.nav-open .sidebar {
+  z-index: 5080;
+}
+
+@media (min-width: 860px) {
+  :root, html.fh-has-catnav { --fh-taskbar-h: 76px; }
+  .fh-taskbar { padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .fh-taskbar-inner {
+    width: max-content;
+    max-width: calc(100% - 24px);
+    gap: 8px;
+    padding: 8px;
+    border-radius: 22px;
+  }
+  .fh-taskbar-link {
+    flex: 0 0 auto;
+    min-width: 88px;
+    min-height: 56px;
+    padding: 8px 16px;
+  }
+  .fh-taskbar-icon { font-size: 20px; }
+  .fh-taskbar-label { font-size: 12px; }
+}
 @media (max-width: 620px) {
-  :root, html.fh-has-catnav { --fh-catnav-h: 54px; }
+  :root, html.fh-has-catnav { --fh-catnav-h: 52px; --fh-taskbar-h: 62px; }
   .fh-catnav-inner { padding: 0 8px; gap: 8px; }
-  .fh-catnav-brand { font-size: 12px; }
-  .fh-catnav-link { padding: 4px 10px; gap: 6px; }
+  .fh-catnav-brand { font-size: 13px; }
+  .fh-catnav-brand-text { display: none; }
+  .fh-catnav-link { padding: 5px 10px; gap: 6px; min-height: 36px; }
   .fh-catnav-label { font-size: 12px; }
+  .fh-catnav-bn { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fh-catnav-link { transition: none; }
+  .fh-catnav-link, .fh-taskbar-link { transition: none; }
 }
