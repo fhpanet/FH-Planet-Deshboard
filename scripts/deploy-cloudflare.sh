@@ -9,4 +9,6 @@ if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; th
   echo "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required."
   exit 1
 fi
-npx --yes wrangler@4 pages deploy dist --project-name "$project" --commit-dirty=true
+# GitLab CI checks out a detached HEAD, so pass the branch explicitly (main = production).
+branch="${CI_COMMIT_BRANCH:-${CI_COMMIT_REF_NAME:-main}}"
+npx --yes wrangler@4 pages deploy dist --project-name "$project" --branch "$branch" --commit-dirty=true
