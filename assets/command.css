@@ -1,0 +1,116 @@
+/* Telegram-style local command bar, docked above the taskbar. */
+:root, html.fh-has-catnav { --fh-cmd-h: 56px; }
+.fh-cmd {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--fh-taskbar-h, 64px));
+  z-index: 4010;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  pointer-events: none;
+  font-family: "Inter", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
+  color: #e6e6ee;
+}
+.fh-cmd-inner {
+  pointer-events: auto;
+  margin: 0 auto;
+  width: min(720px, calc(100% - 16px));
+  background: rgba(16, 16, 24, 0.94);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid rgba(245, 197, 66, 0.28);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  padding: 6px 8px;
+}
+.fh-cmd-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 6px 4px;
+  font-size: 11px;
+  color: #c4b27a;
+}
+.fh-cmd-log-btn {
+  border: 0;
+  background: transparent;
+  color: #f5c542;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+.fh-cmd-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.fh-cmd-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(42, 42, 58, 0.95);
+  background: rgba(28, 28, 40, 0.85);
+  color: #e6e6ee;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+}
+.fh-cmd-row input:focus { outline: 2px solid rgba(245, 197, 66, 0.45); border-color: #f5c542; }
+.fh-cmd-send {
+  flex: none;
+  min-width: 44px;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid #f5c542;
+  background: #f5c542;
+  color: #0f0f14;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fh-cmd-suggest {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 4px;
+  display: none;
+}
+.fh-cmd-suggest.is-open { display: block; }
+.fh-cmd-suggest button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: #e6e6ee;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.fh-cmd-suggest button.is-on,
+.fh-cmd-suggest button:hover { background: rgba(245, 197, 66, 0.16); color: #f5c542; }
+.fh-cmd-log {
+  display: none;
+  max-height: 180px;
+  overflow: auto;
+  margin: 0 0 6px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(10, 10, 16, 0.7);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.fh-cmd-log.is-open { display: block; }
+.fh-cmd-log .entry { margin: 0 0 6px; }
+.fh-cmd-log .entry .meta { color: #8a8a9a; font-size: 10px; }
+.fh-cmd-log .entry.out { color: #e6e6ee; }
+.fh-cmd-log .entry.in { color: #f5c542; }
+.fh-cmd-log .entry.sys { color: #c4b27a; }
+@media (max-width: 620px) {
+  :root, html.fh-has-catnav { --fh-cmd-h: 58px; }
+  .fh-cmd-inner { width: calc(100% - 8px); border-radius: 14px 14px 0 0; }
+}

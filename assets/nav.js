@@ -2,12 +2,12 @@
   "use strict";
 
   /**
-   * FH Planet category navigation and project taskbar (shared by every page).
+   * FH Planet category navigation, project taskbar, and slide-in sidebar.
    *
    * To add a new category/project, append one object to FH_PLANET_NAV below, then
    * create the page, anchor, or window it points at. Example:
    *   { id: "reports", label: "Reports", short: "Reports", labelBn: "রিপোর্ট", href: "/reports/", icon: "📊" }
-   * Both the top bar and the bottom taskbar read this single list.
+   * The top bar, taskbar, and sidebar all read this single list.
    */
   var FH_PLANET_NAV = [
     { id: "dashboard", label: "Dashboard", short: "Dashboard", labelBn: "ড্যাশবোর্ড", href: "/", icon: "🪐" },
@@ -25,86 +25,27 @@
     return p;
   }
 
-  function isHubPath(path) {
-    return path === "/" || path === "";
-  }
-
   function isFinancePath(path) {
+    path = path || normalizePath(location.pathname);
     return path === "/finance" || path.indexOf("/finance/") === 0;
   }
 
-  function hashId() {
-    return String(global.location.hash || "").replace(/^#/, "");
+  function isFinanceStandalone() {
+    return isFinancePath();
   }
 
-  function isTodoHash(h) {
-    return h === "view-todo" || h === "todo";
-  }
-
-  function isPlanningHash(h) {
-    return h === "view-planning" || h === "planning";
-  }
-
-  function isFinanceHash(h) {
-    return h === "finance" || h === "view-finance";
-  }
-
-  function financeWindowOpen() {
-    return !!(document.body && document.body.classList.contains("fh-win-finance-open"));
+  function winState(id) {
+    if (global.FHPlanetShell && typeof global.FHPlanetShell.getState === "function") {
+      return global.FHPlanetShell.getState(id);
+    }
+    return { state: "closed", active: false, open: false, minimized: false };
   }
 
   function itemIsActive(item) {
-    var path = normalizePath(global.location.pathname);
-    var hash = hashId();
-    var href = item.href || "";
-    if (item.id === "finance" || item.window) {
-      return isFinancePath(path) || isFinanceHash(hash) || financeWindowOpen();
-    }
-    if (item.id === "todo" || /#view-todo\b|#todo\b/.test(href)) {
-      return isHubPath(path) && isTodoHash(hash) && !financeWindowOpen();
-    }
-    if (item.id === "planning" || /#view-planning\b|#planning\b/.test(href)) {
-      return isHubPath(path) && isPlanningHash(hash) && !financeWindowOpen();
-    }
-    if (item.id === "dashboard" || href === "/") {
-      return isHubPath(path) && !isTodoHash(hash) && !isPlanningHash(hash) && !isFinanceHash(hash) && !financeWindowOpen();
-    }
-    var parts = href.split("#");
-    var hrefPath = normalizePath(parts[0] || "/");
-    var hrefHash = parts[1] || "";
-    if (hrefHash) return path === hrefPath && hash === hrefHash;
-    if (hrefPath === "/") return isHubPath(path);
-    return path === hrefPath || path.indexOf(hrefPath.replace(/\/?$/, "/")) === 0;
-  }
-
-  function scrollToHash() {
-    var h = hashId();
-    if (isFinanceHash(h)) return;
-    var main = document.getElementById("main") || document.querySelector("main.main");
-    if (!h) {
-      if (main) main.scrollTop = 0;
-      return;
-    }
-    var el = document.getElementById(h) || document.getElementById("view-" + h);
-    if (!el) return;
-    if (main && main !== document.body && main.scrollHeight > main.clientHeight) {
-      var top = el.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop - 10;
-      if (typeof main.scrollTo === "function") {
-        main.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-      } else {
-        main.scrollTop = Math.max(0, top);
-      }
-    } else if (typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
-  function markSidebar() {
-    var h = hashId().replace(/^view-/, "");
-    var buttons = document.querySelectorAll(".sidebar .nav [data-tab]");
-    Array.prototype.forEach.call(buttons, function (btn) {
-      btn.classList.toggle("active", btn.getAttribute("data-tab") === h);
-    });
+    var st = winState(item.id);
+    if (st.active) return true;
+    if (isFinanceStandalone() && item.id === "finance" && !st.open) return true;
+    return false;
   }
 
   function textSpan(className, text) {
@@ -123,14 +64,18 @@
       a.href = item.href;
       a.setAttribute("data-nav-id", item.id);
       a.setAttribute("role", "listitem");
-      if (item.window) a.setAttribute("data-nav-window", "finance");
-      if (itemIsActive(item)) {
+      var st = winState(item.id);
+      if (st.active || itemIsActive(item)) {
         a.classList.add("is-active");
         a.setAttribute("aria-current", "page");
       }
+      if (st.minimized) a.classList.add("is-min");
+      if (st.open && !st.minimized) a.classList.add("is-open");
       if (mode === "taskbar") {
         a.appendChild(textSpan("fh-taskbar-icon", item.icon || ""));
         a.appendChild(textSpan("fh-taskbar-label", item.short || item.label || ""));
+        var mark = textSpan("fh-taskbar-state", st.minimized ? "min" : st.active ? "on" : st.open ? "open" : "");
+        a.appendChild(mark);
       } else {
         a.appendChild(textSpan("fh-catnav-icon", item.icon || ""));
         var text = document.createElement("span");
@@ -148,47 +93,227 @@
     if (nav) fillList(nav.querySelector(".fh-catnav-list"), "top");
     var bar = document.getElementById("fh-taskbar");
     if (bar) fillList(bar.querySelector(".fh-taskbar-inner"), "taskbar");
+    syncSideProjects();
   }
 
-  function isFinanceStandalone() {
-    return isFinancePath(normalizePath(global.location.pathname));
-  }
-
-  function openFinanceFromHub(event) {
+  function openProject(id, event) {
     if (event) event.preventDefault();
-    if (isFinanceStandalone()) {
-      if (global.FHFinance && global.FHFinance.mount) {
-        /* already mounted in place */
-        return;
-      }
+    if (isFinanceStandalone() && id !== "finance") {
+      var href = id === "todo" ? "/#view-todo" : id === "planning" ? "/#view-planning" : "/#dashboard";
+      location.href = href;
       return;
     }
-    if (global.FHPlanetShell && typeof global.FHPlanetShell.openFinance === "function") {
-      global.FHPlanetShell.openFinance();
-    } else {
-      global.location.href = "/finance/";
+    if (global.FHPlanetShell && typeof global.FHPlanetShell.open === "function") {
+      global.FHPlanetShell.open(id);
+      return;
     }
+    var item = FH_PLANET_NAV.filter(function (p) { return p.id === id; })[0];
+    if (item) location.href = item.href;
   }
 
   function onNavClick(event) {
     var link = event.target.closest("[data-nav-id]");
-    if (!link) {
-      var financeHit = event.target.closest('a[href="/finance/"], a[href="/finance"], a.modlink, a.mod-open, a.mod-tile');
-      if (financeHit && /\/finance\/?$/.test((financeHit.getAttribute("href") || "").replace(global.location.origin, ""))) {
-        if (!isFinanceStandalone()) {
-          event.preventDefault();
-          openFinanceFromHub(event);
-        }
-      }
+    if (link) {
+      openProject(link.getAttribute("data-nav-id"), event);
+      closeSidebar();
       return;
     }
-    var id = link.getAttribute("data-nav-id");
-    if (id === "finance" || link.getAttribute("data-nav-window") === "finance") {
+    var financeHit = event.target.closest('a[href="/finance/"], a[href="/finance"], a.modlink, a.mod-open, a.mod-tile');
+    if (financeHit && /\/finance\/?$/.test((financeHit.getAttribute("href") || "").replace(location.origin, ""))) {
       if (!isFinanceStandalone()) {
         event.preventDefault();
-        openFinanceFromHub(event);
+        openProject("finance", event);
+        closeSidebar();
       }
     }
+  }
+
+  /* ---- slide-in sidebar ---- */
+  var lastFocus = null;
+  var sideOpenedAt = 0;
+
+  function drawerEl() {
+    return document.getElementById("fh-side-drawer") || document.querySelector("body.fh-hub #app > .sidebar");
+  }
+
+  function isOpen() {
+    return document.body.classList.contains("fh-side-open");
+  }
+
+  function openSidebar() {
+    var drawer = drawerEl();
+    var btn = document.getElementById("fh-side-toggle");
+    if (!drawer || !btn) return;
+    lastFocus = document.activeElement;
+    sideOpenedAt = Date.now();
+    document.body.classList.add("fh-side-open");
+    drawer.removeAttribute("aria-hidden");
+    btn.setAttribute("aria-expanded", "true");
+    var first = drawer.querySelector("a, button");
+    if (first) first.focus();
+  }
+
+  function closeSidebar() {
+    if (!isOpen()) return;
+    var drawer = drawerEl();
+    var btn = document.getElementById("fh-side-toggle");
+    document.body.classList.remove("fh-side-open");
+    if (drawer) drawer.setAttribute("aria-hidden", "true");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+    else if (btn) btn.focus();
+  }
+
+  function toggleSidebar() {
+    if (isOpen()) closeSidebar();
+    else openSidebar();
+  }
+
+  function syncSideProjects() {
+    var drawer = drawerEl();
+    if (!drawer) return;
+    var nav = drawer.querySelector(".nav") || drawer;
+    if (nav.querySelector("[data-nav-id]")) return;
+    if (drawer.getAttribute("data-fh-built") === "1") return;
+    if (document.querySelector("body.fh-hub #app > .sidebar")) return;
+    drawer.setAttribute("data-fh-built", "1");
+  }
+
+  function ensureSidebar() {
+    var existing = document.querySelector("#app > .sidebar");
+    var drawer;
+    if (existing) {
+      existing.id = existing.id || "fh-side-drawer";
+      existing.classList.add("fh-side-drawer");
+      if (existing.parentNode !== document.body) document.body.appendChild(existing);
+      drawer = existing;
+      var nav = drawer.querySelector(".nav") || drawer;
+      var attachAt = nav.firstChild;
+      FH_PLANET_NAV.forEach(function (item) {
+        if (drawer.querySelector('[data-nav-id="' + item.id + '"]') || drawer.querySelector('a[href="/finance/"], a[href="/finance"]') && item.id === "finance") return;
+        if (item.id !== "finance" && drawer.querySelector('[data-tab="' + item.id + '"]')) return;
+        var a = document.createElement("a");
+        a.href = item.href;
+        a.setAttribute("data-nav-id", item.id);
+        a.innerHTML = '<span class="icon">' + (item.icon || "") + "</span> " + (item.labelBn || item.label);
+        nav.insertBefore(a, attachAt);
+      });
+    } else {
+      drawer = document.createElement("aside");
+      drawer.id = "fh-side-drawer";
+      drawer.className = "fh-side-drawer sidebar";
+      var logo = document.createElement("div");
+      logo.className = "logo";
+      logo.innerHTML = '<span class="lamp">🪐</span> FH Planet';
+      var nav = document.createElement("div");
+      nav.className = "nav";
+      FH_PLANET_NAV.forEach(function (item) {
+        var a = document.createElement("a");
+        a.href = item.href;
+        a.setAttribute("data-nav-id", item.id);
+        a.innerHTML = '<span class="icon">' + (item.icon || "") + "</span> " + (item.labelBn || item.label);
+        nav.appendChild(a);
+      });
+      drawer.appendChild(logo);
+      drawer.appendChild(nav);
+      document.body.appendChild(drawer);
+    }
+    drawer.setAttribute("aria-hidden", "true");
+    drawer.setAttribute("role", "navigation");
+    drawer.setAttribute("aria-label", "FH Planet menu");
+
+    if (!document.getElementById("fh-side-toggle")) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "fh-side-toggle";
+      btn.className = "fh-side-toggle";
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-controls", drawer.id);
+      btn.setAttribute("aria-label", "Open menu");
+      btn.textContent = "⋮";
+      btn.addEventListener("click", function (event) {
+        event.stopPropagation();
+        toggleSidebar();
+      });
+      document.body.appendChild(btn);
+    }
+    if (!document.getElementById("fh-side-scrim")) {
+      var scrim = document.createElement("button");
+      scrim.type = "button";
+      scrim.id = "fh-side-scrim";
+      scrim.className = "fh-side-scrim";
+      scrim.setAttribute("aria-label", "Close menu");
+      scrim.addEventListener("click", closeSidebar);
+      document.body.appendChild(scrim);
+    }
+  }
+
+  function bindSidebarLinks() {
+    var drawer = drawerEl();
+    if (!drawer || drawer.getAttribute("data-fh-side-bound")) return;
+    drawer.setAttribute("data-fh-side-bound", "1");
+    drawer.addEventListener("click", function (event) {
+      var tabBtn = event.target.closest("[data-tab]");
+      if (tabBtn) {
+        var tab = tabBtn.getAttribute("data-tab");
+        var id = tab === "todo" ? "todo" : tab === "planning" ? "planning" : "dashboard";
+        openProject(id, event);
+        closeSidebar();
+        setTimeout(function () {
+          var el = document.getElementById("view-" + tab);
+          if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "start", behavior: "smooth" });
+        }, 60);
+        return;
+      }
+      var navId = event.target.closest("[data-nav-id]");
+      if (navId) {
+        openProject(navId.getAttribute("data-nav-id"), event);
+        closeSidebar();
+      }
+    });
+  }
+
+  function bindDismiss() {
+    document.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape") return;
+      if (isOpen()) {
+        event.preventDefault();
+        closeSidebar();
+      }
+    });
+    document.addEventListener("pointerdown", function (event) {
+      if (!isOpen()) return;
+      if (Date.now() - sideOpenedAt < 250) return;
+      var drawer = drawerEl();
+      var btn = document.getElementById("fh-side-toggle");
+      if (drawer && drawer.contains(event.target)) return;
+      if (btn && btn.contains(event.target)) return;
+      closeSidebar();
+    }, true);
+    function onMainScroll(event) {
+      if (!isOpen()) return;
+      if (Date.now() - sideOpenedAt < 250) return;
+      var drawer = drawerEl();
+      var btn = document.getElementById("fh-side-toggle");
+      if (drawer && drawer.contains(event.target)) return;
+      if (btn && btn.contains(event.target)) return;
+      closeSidebar();
+    }
+    document.addEventListener("wheel", onMainScroll, true);
+    document.addEventListener("touchmove", onMainScroll, true);
+    document.addEventListener("keydown", function (event) {
+      if (!isOpen() || event.key !== "Tab") return;
+      var drawer = drawerEl();
+      var btn = document.getElementById("fh-side-toggle");
+      if (!drawer) return;
+      var nodes = [btn].concat(Array.prototype.slice.call(drawer.querySelectorAll("a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])")));
+      nodes = nodes.filter(Boolean);
+      if (!nodes.length) return;
+      var first = nodes[0];
+      var last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
   }
 
   function mount() {
@@ -233,33 +358,10 @@
     }
     document.documentElement.classList.add("fh-has-catnav", "fh-has-taskbar");
     document.body.classList.add("fh-has-catnav", "fh-has-taskbar");
+    ensureSidebar();
+    bindSidebarLinks();
+    bindDismiss();
     render();
-    markSidebar();
-    if (isFinanceHash(hashId()) && !isFinanceStandalone()) {
-      openFinanceFromHub();
-    } else {
-      scrollToHash();
-    }
-  }
-
-  function bindSidebar() {
-    var buttons = document.querySelectorAll(".sidebar .nav [data-tab]");
-    Array.prototype.forEach.call(buttons, function (btn) {
-      if (btn.getAttribute("data-fh-cat-bound")) return;
-      btn.setAttribute("data-fh-cat-bound", "1");
-      btn.addEventListener("click", function () {
-        var id = "view-" + btn.getAttribute("data-tab");
-        if (!document.getElementById(id)) return;
-        if (global.FHPlanetShell && global.FHPlanetShell.closeFinance) global.FHPlanetShell.closeFinance();
-        if (global.location.hash !== "#" + id) {
-          global.location.hash = id;
-        } else {
-          render();
-          markSidebar();
-          scrollToHash();
-        }
-      });
-    });
   }
 
   function onReady(fn) {
@@ -269,19 +371,8 @@
 
   onReady(function () {
     mount();
-    bindSidebar();
     document.addEventListener("click", onNavClick);
   });
-  global.addEventListener("hashchange", function () {
-    render();
-    markSidebar();
-    if (isFinanceHash(hashId()) && !isFinanceStandalone()) openFinanceFromHub();
-    else scrollToHash();
-  });
-  global.addEventListener("popstate", function () {
-    render();
-    markSidebar();
-    scrollToHash();
-  });
-  global.FHPlanetNav = { render: render, items: FH_PLANET_NAV };
+  document.addEventListener("fh-windows-change", render);
+  global.FHPlanetNav = { render: render, items: FH_PLANET_NAV, open: openProject, closeSidebar: closeSidebar, openSidebar: openSidebar };
 })(window);

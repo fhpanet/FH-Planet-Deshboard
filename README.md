@@ -16,7 +16,7 @@ FH Planet is a small static site with two layers:
 | `app.py` | Oracle reporting service (stdlib HTTP, `/reports`). Not published |
 | `fhplanet-reports.service` | User systemd unit for `app.py`. Not published |
 | `finance/` | Static Finance app: `index.html`, `css/app.css`, `js/` |
-| `assets/nav.js`, `assets/nav.css`, `assets/windows.js`, `assets/hub.css` | Shared top bar and bottom taskbar (Dashboard, To Do, Finance, Planning). Finance opens in a hub window (no iframe). Add a category by editing `FH_PLANET_NAV` in `assets/nav.js`. |
+| `assets/nav.js`, `assets/nav.css`, `assets/windows.js`, `assets/windows.css`, `assets/hub.css`, `assets/command.js`, `assets/command.css` | Shared top bar, window manager, slide-in sidebar, and local command bar. Add a category by editing `FH_PLANET_NAV` in `assets/nav.js`. |
 | `_headers` | Security headers for Cloudflare Pages |
 | `.gitlab-ci.yml` | Verify, Cloudflare Pages deploy, manual SSH deploy |
 | `.github/workflows/deploy.yml` | The same pipeline on GitHub |
@@ -24,6 +24,24 @@ FH Planet is a small static site with two layers:
 Finance keeps its ledger in `localStorage` (`fhplanet.finance.v1`). The hub reads `fhplanet.finance.summary` for the live liquid / today in / today out / posted counts. JSON backup, JSON restore, and CSV export are in the Finance app under Hermes Control.
 
 Names used everywhere: **FH Organization**, **FH Academy**, **FH Planet**.
+
+
+## Windows, sidebar, and command bar
+
+The hub (`/` and `/dash`) runs a client-side window manager (`assets/windows.js`) for Dashboard, To Do, Finance Department, and FH Organization Planning. Existing page sections are moved into window bodies so their original scripts keep working. There is no iframe. Each window has a title bar with minimize, maximize, restore, and close (close minimizes). On a desktop you can have several windows open, drag them by the title bar, and resize from every edge and corner. Geometry and open/minimized state are stored in `localStorage` under `fhplanet.windows.v1`. On phones (viewport under 768px) a window opens maximized, only one is visible at a time, and the taskbar switches between them.
+
+A three-dot (⋮) control at the left edge opens the existing hub sidebar as a slide-in drawer. It lists `FH_PLANET_NAV` projects plus the hub quick links (routine, reminders, projects, modes). The drawer closes on an outside click or tap, a scroll or click in the main area, choosing an item, or Escape. On the standalone `/finance/` page a thin project drawer is built from the same nav list.
+
+### Local command bar (`FH_PLANET_COMMAND`)
+
+Every page docks a Telegram-style command bar just above the taskbar (`assets/command.js`). The only config object is:
+
+```js
+window.FH_PLANET_COMMAND = { endpoint: null };
+```
+
+Leave `endpoint` as `null` on the public site. **This build never sends a message anywhere** — no Telegram API, no tokens, and no network call, even if `endpoint` is later filled in (that field is reserved for a future Hermes connection). The status line reads `Hermes সংযুক্ত নয় — not connected`. Typed lines are kept in a local log (`localStorage` key `fhplanet.command.log`). Slash commands such as `/status`, `/todo`, `/finance`, `/planning`, `/dashboard`, and `/help` are handled in the browser; the window commands only open the matching hub window.
+
 
 ## Finance modules
 

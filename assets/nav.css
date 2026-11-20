@@ -2,6 +2,7 @@
 :root, html.fh-has-catnav {
   --fh-catnav-h: 56px;
   --fh-taskbar-h: 64px;
+  --fh-cmd-h: 56px;
 }
 .fh-catnav {
   position: fixed;
@@ -149,17 +150,27 @@
 }
 .fh-taskbar-icon { font-size: 18px; line-height: 1; }
 .fh-taskbar-label { font-size: 11px; white-space: nowrap; }
+.fh-taskbar-state {
+  display: block;
+  width: 18px;
+  height: 3px;
+  border-radius: 99px;
+  background: transparent;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+}
+.fh-taskbar-link.is-open { border-color: rgba(245, 197, 66, 0.45); }
+.fh-taskbar-link.is-open .fh-taskbar-state { background: #f5c542; }
+.fh-taskbar-link.is-min { opacity: 0.82; }
+.fh-taskbar-link.is-min .fh-taskbar-state { background: #8a8a9a; }
+.fh-taskbar-link.is-active .fh-taskbar-state { background: #0f0f14; }
 
 html.fh-has-catnav body.fh-has-catnav,
 html.fh-has-taskbar body.fh-has-taskbar {
   padding-top: var(--fh-catnav-h);
-  padding-bottom: calc(var(--fh-taskbar-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--fh-taskbar-h) + var(--fh-cmd-h, 56px) + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
-}
-html.fh-has-catnav body.fh-has-catnav #app > .sidebar {
-  max-height: calc(100vh - var(--fh-catnav-h) - var(--fh-taskbar-h) - env(safe-area-inset-bottom, 0px));
-  top: var(--fh-catnav-h);
-  height: calc(100vh - var(--fh-catnav-h) - var(--fh-taskbar-h) - env(safe-area-inset-bottom, 0px));
 }
 
 /* Overlays belong above the taskbar. */
