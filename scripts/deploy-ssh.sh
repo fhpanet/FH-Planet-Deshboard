@@ -1,4 +1,5 @@
 #!/bin/sh
+# Static files only: this script never changes HTTPS/SSL, certificates, domains or Caddy config.
 # Rsync the public site to a No-IP / Oracle host. Never prints the key.
 # SSH_PRIVATE_KEY may be a raw private key, or base64 (so GitLab can mask it).
 set -eu

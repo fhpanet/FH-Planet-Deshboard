@@ -1,6 +1,15 @@
-# FH Planet — GitLab CI
-# validate builds the public site on every push and does not need secrets.
-# Deploy jobs are added only when their CI/CD variables are set.
+# FH Planet — GitLab CI (fully automatic; no manual steps or prompts)
+# Every push runs validate. Every push to main also deploys automatically,
+# to Cloudflare Pages and/or the SSH server, once their CI/CD variables are set.
+#
+# IMPORTANT: Do NOT modify HTTPS/SSL settings, certificates, domains, DNS,
+# Caddy config, or Cloudflare zone/custom-domain settings from this pipeline.
+# The deploy jobs only upload static files from dist/ and never touch HTTPS.
+#
+# The Finance module lives in its own finance/ folder and is opened from a
+# module launcher card on the main index.html. No iframe is used, and the
+# CI/deployment does not depend on one.
+#
 # No tokens or keys belong in this file.
 
 stages:
@@ -52,7 +61,7 @@ deploy_ssh_server:
       artifacts: true
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $SSH_PRIVATE_KEY
-      when: manual
+      when: on_success
   before_script:
     - apk add --no-cache openssh-client rsync tar
   script:

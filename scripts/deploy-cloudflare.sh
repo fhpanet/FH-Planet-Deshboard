@@ -1,4 +1,5 @@
 #!/bin/sh
+# Static upload only: this script never changes custom domains, SSL/HTTPS or other Cloudflare settings.
 # Publish ./dist to Cloudflare Pages. Tokens come from the CI environment only.
 set -eu
 cd "$(dirname "$0")/.."
