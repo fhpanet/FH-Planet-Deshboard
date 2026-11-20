@@ -22,6 +22,13 @@ test -f dist/finance/js/app.js
 test -f dist/finance/js/store.js
 test -f dist/finance/js/sms.js
 test -f dist/_headers
+test -f dist/assets/nav.js
+test -f dist/assets/nav.css
+grep -q "FH_PLANET_NAV" dist/assets/nav.js
+grep -q "assets/nav.js" dist/index.html
+grep -q "assets/nav.js" dist/finance/index.html
+grep -q "assets/nav.js" dist/dash.html
+grep -q "id=\"view-todo\"" dist/index.html
 grep -q "FH Planet Modules" dist/index.html
 grep -q "টড়ো" dist/index.html
 test ! -f dist/app.py

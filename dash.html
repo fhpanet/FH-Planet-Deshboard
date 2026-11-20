@@ -150,6 +150,7 @@
     .topbar h1{font-size:17px;}
   }
 </style>
+<link rel="stylesheet" href="/assets/nav.css">
 </head>
 <body>
 <div class="app" id="app">
@@ -573,5 +574,6 @@ setInterval(()=>{
   document.querySelector('.topbar .date').textContent = `${String(d.getDate()).padStart(2,'0')} / ${String(d.getMonth()+1).padStart(2,'0')} / ${d.getFullYear()} · ${hr}:${mn} ${am?'AM':'PM'}`;
 }, 1000);
 </script>
+<script src="/assets/nav.js" defer></script>
 </body>
 </html>
