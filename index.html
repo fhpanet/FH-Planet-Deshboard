@@ -308,6 +308,99 @@
     .fh-cmd-row input{ font-size:14px !important; padding:12px 13px !important; }
   }
   .appfoot{ margin:22px 0 16px !important; }
+
+  /* ===== dashboard overview: one card per section ===== */
+  .dash-tiles{
+    display:grid; gap:14px; margin-bottom:6px;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  }
+  .dash-tile{
+    position:relative; display:flex; flex-direction:column; gap:8px;
+    padding:16px 16px 14px; border-radius:var(--radius);
+    background:linear-gradient(160deg, rgba(28,28,40,.96), rgba(20,20,28,.98));
+    border:1px solid var(--border); box-shadow:var(--shadow);
+    cursor:pointer; text-align:left; color:inherit; font:inherit;
+    transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  }
+  .dash-tile:hover{
+    transform:translateY(-2px); border-color:rgba(245,197,66,.5);
+    box-shadow:0 12px 26px rgba(0,0,0,.45);
+  }
+  .dash-tile:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+  .dash-tile .t-top{ display:flex; align-items:center; gap:10px; }
+  .dash-tile .t-icon{
+    width:38px; height:38px; flex:0 0 38px; border-radius:11px;
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+    background:rgba(245,197,66,.12); border:1px solid rgba(245,197,66,.22);
+  }
+  .dash-tile .t-title{ font-size:15px; font-weight:700; line-height:1.25; }
+  .dash-tile .t-desc{
+    font-size:12.5px; color:var(--muted); line-height:1.55;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .dash-tile .t-foot{
+    margin-top:auto; display:flex; align-items:center; justify-content:space-between;
+    font-size:11.5px; color:var(--amber); letter-spacing:.2px;
+  }
+  .dash-tile .t-badge{
+    background:rgba(245,197,66,.14); color:var(--amber);
+    border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600;
+  }
+  @media (max-width:700px){
+    .dash-tiles{ grid-template-columns:1fr 1fr; gap:10px; }
+    .dash-tile{ padding:13px 12px; }
+    .dash-tile .t-icon{ width:32px; height:32px; flex-basis:32px; font-size:16px; }
+    .dash-tile .t-title{ font-size:13.5px; }
+    .dash-tile .t-desc{ display:none; }
+  }
+  @media (max-width:380px){ .dash-tiles{ grid-template-columns:1fr; } }
+
+  /* ===== reference-style header buttons, chat panel, round command bar buttons ===== */
+  .appbar .clock{ display:none; }
+  .appbar .iconbtn{
+    width:40px; height:40px; flex:0 0 40px; border-radius:50%;
+    border:1px solid var(--border); background:var(--panel2); color:var(--text);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; cursor:pointer; padding:0; transition:.15s ease;
+  }
+  .appbar .iconbtn:hover{ background:var(--amber); color:#12121a; border-color:var(--amber); }
+  .appbar .iconbtn.on{ color:var(--amber); border-color:rgba(245,197,66,.5); }
+  .appbar .titlewrap{ display:flex; align-items:center; gap:6px; min-width:0; cursor:pointer; }
+  .appbar .titlewrap .chev{ font-size:11px; color:var(--muted); }
+
+  /* chat bubbles from Hermes */
+  .agent-chat{
+    position:fixed; left:0; right:0;
+    bottom:calc(var(--fh-taskbar-h, 64px) + var(--fh-cmd-h, 86px));
+    z-index:4005; max-height:54vh; overflow-y:auto;
+    padding:14px 12px 6px; display:none; flex-direction:column; gap:9px;
+    background:linear-gradient(180deg, rgba(10,10,16,0), rgba(10,10,16,.94) 22%);
+  }
+  .agent-chat.is-open{ display:flex; }
+  .bubble{
+    max-width:88%; padding:10px 13px; border-radius:16px;
+    font-size:13.5px; line-height:1.6; white-space:pre-wrap; word-break:break-word;
+  }
+  .bubble.user{ align-self:flex-end; background:#242432; border-bottom-right-radius:6px; }
+  .bubble.agent{ align-self:flex-start; background:#1a1a24; border:1px solid var(--border); border-bottom-left-radius:6px; }
+  .bubble.agent .who{ display:block; font-size:10px; letter-spacing:.4px; color:var(--amber); margin-bottom:5px; text-transform:uppercase; }
+  .bubble.pending{ opacity:.65; font-style:italic; }
+
+  /* command bar: rounded panel with circular buttons, like the reference */
+  .fh-cmd-inner{ background:#16161f !important; border-radius:26px 26px 0 0 !important; }
+  .fh-cmd-row{ display:flex; align-items:center; gap:8px; }
+  .fh-cmd-row input{ flex:1 1 auto; }
+  .fh-cmd-circle{
+    width:40px; height:40px; flex:0 0 40px; border-radius:50%;
+    border:1px solid var(--border); background:#1e1e26; color:var(--text);
+    font-size:16px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0; transition:.15s ease;
+  }
+  .fh-cmd-circle:hover{ background:var(--amber); color:#12121a; border-color:var(--amber); }
+  .fh-cmd-circle.rec{ background:#c0392b; color:#fff; border-color:#c0392b; }
+  .fh-cmd-status .dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; background:#ef4444; vertical-align:middle; }
+  .fh-cmd-status .dot.ok{ background:#4ade80; }
+  @media (max-width:620px){ .appbar .iconbtn{ width:36px; height:36px; flex-basis:36px; } }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -341,7 +434,8 @@
       </div>
     </div>
     <div class="spacer"></div>
-    <div class="clock" id="fhClock"></div>
+    <button class="iconbtn" id="btnVoice" type="button" title="ভয়েস / TTS" aria-label="ভয়েস">🔊</button>
+    <button class="iconbtn" id="btnAgent" type="button" title="Hermes এজেন্ট" aria-label="Hermes">✦</button>
   </header>
   <button class="fh-side-scrim" id="fhSideScrim" type="button" aria-label="মেনু বন্ধ"></button>
   <aside class="sidebar">
@@ -1049,6 +1143,223 @@ setInterval(()=>{
   window.addEventListener('resize', function () {
     clearTimeout(rt); rt = setTimeout(show, 120);
   });
+})();
+</script>
+<script>
+(function () {
+  var main = document.getElementById('main');
+  if (!main || document.getElementById('dashTiles')) return;
+
+  var sections = [].slice.call(main.querySelectorAll('section[id]'));
+  if (!sections.length) return;
+
+  var grid = document.createElement('div');
+  grid.className = 'dash-tiles';
+  grid.id = 'dashTiles';
+
+  function navId(id) {
+    return id.replace(/^view-/, '');
+  }
+  function text(el, sel) {
+    var n = el.querySelector(sel);
+    return n ? n.textContent.trim() : '';
+  }
+  function openSection(section) {
+    var id = navId(section.id);
+    if (window.FHPlanetNav && typeof window.FHPlanetNav.open === 'function') {
+      try { window.FHPlanetNav.open(id); return; } catch (e) {}
+    }
+    if (window.FHPlanetShell && typeof window.FHPlanetShell.open === 'function') {
+      window.FHPlanetShell.open(id); return;
+    }
+    location.hash = '#' + section.id;
+    if (section.scrollIntoView) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  sections.forEach(function (section) {
+    var id = navId(section.id);
+    var title = text(section, 'h2') || id;
+    var iconMatch = title.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+/u);
+    var icon = iconMatch ? iconMatch[0].trim() : '•';
+    var cleanTitle = title.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '').trim();
+    var desc = text(section, 'p.hint') || text(section, 'p') || '';
+
+    var count = section.querySelectorAll('li').length;
+
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'dash-tile';
+    card.setAttribute('data-tile', id);
+    card.innerHTML =
+      '<span class="t-top"><span class="t-icon">' + icon + '</span>' +
+        '<span class="t-title">' + cleanTitle + '</span></span>' +
+      '<span class="t-desc">' + (desc.length > 110 ? desc.slice(0, 110) + '…' : desc) + '</span>' +
+      '<span class="t-foot"><span>খুলুন ›</span>' +
+        (count ? '<span class="t-badge">' + count + '</span>' : '') + '</span>';
+    card.addEventListener('click', function () { openSection(section); });
+    grid.appendChild(card);
+  });
+
+  var firstSection = main.querySelector('section[id]');
+  if (firstSection && firstSection.parentNode === main) main.insertBefore(grid, firstSection);
+  else main.insertBefore(grid, main.firstChild);
+})();
+</script>
+<script>
+(function () {
+  var BASE = 'https://fhplanet.ddns.net/agent';
+  var KEY_STORE = 'fh.agentKey';
+  var chat = null, since = 0, pollTimer = null, lastStatus = {};
+
+  function key() { try { return localStorage.getItem(KEY_STORE) || ''; } catch (e) { return ''; } }
+  function askKey() {
+    var k = window.prompt('ড্যাশবোর্ড সংযোগ কী দিন (Hermes connect key):', key() || '');
+    if (k) { try { localStorage.setItem(KEY_STORE, k.trim()); } catch (e) {} }
+    return key();
+  }
+
+  function panel() {
+    if (chat) return chat;
+    chat = document.createElement('div');
+    chat.className = 'agent-chat';
+    chat.id = 'agentChat';
+    var cmd = document.getElementById('fh-cmd');
+    document.body.insertBefore(chat, cmd || null);
+    return chat;
+  }
+
+  function bubble(role, text, pending) {
+    var b = document.createElement('div');
+    b.className = 'bubble ' + role + (pending ? ' pending' : '');
+    if (role === 'agent') {
+      var who = document.createElement('span');
+      who.className = 'who';
+      who.textContent = 'HERMES';
+      b.appendChild(who);
+    }
+    b.appendChild(document.createTextNode(text));
+    panel().appendChild(b);
+    panel().classList.add('is-open');
+    panel().scrollTop = panel().scrollHeight;
+    return b;
+  }
+
+  function setStatus(ok, text) {
+    var el = document.getElementById('fh-cmd-status');
+    if (!el) return;
+    el.innerHTML = '<span class="dot' + (ok ? ' ok' : '') + '"></span>' + text;
+  }
+
+  function status() {
+    fetch(BASE + '/api/status', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        lastStatus = d;
+        setStatus(!!d.connected, d.connected ? 'Hermes সংযুক্ত · অপেক্ষমাণ ' + (d.queued || 0) : 'Hermes সংযুক্ত নয়');
+      })
+      .catch(function () { setStatus(false, 'Hermes সংযুক্ত নয় — সার্ভারে পৌঁছাচ্ছে না'); });
+  }
+
+  function poll() {
+    fetch(BASE + '/api/replies?since=' + since, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        (d.replies || []).forEach(function (r) {
+          if (r.ts <= since) return;
+          since = Math.max(since, r.ts);
+          if (r.role === 'agent') bubble('agent', r.text);
+        });
+        status();
+      })
+      .catch(function () {});
+  }
+
+  function send(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    var k = key() || askKey();
+    if (!k) { setStatus(false, 'সংযোগ কী ছাড়া কমান্ড পাঠানো যাবে না'); return; }
+    bubble('user', text);
+    var thinking = bubble('agent', 'Hermes কাজ করছে…', true);
+    fetch(BASE + '/api/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + k },
+      body: JSON.stringify({ text: text })
+    }).then(function (r) {
+      if (r.status === 401) {
+        try { localStorage.removeItem(KEY_STORE); } catch (e) {}
+        thinking.remove();
+        bubble('agent', 'কী মিলেনি — আবার কী দিন।');
+        return;
+      }
+      return r.json();
+    }).then(function () {
+      since = Math.max(since, Date.now() / 1000 - 2);
+      poll();
+    }).catch(function () {
+      thinking.remove();
+      bubble('agent', 'সার্ভারে পাঠানো যায়নি — ইন্টারনেট বা সার্ভার বন্ধ থাকতে পারে।');
+    });
+    var input = document.getElementById('fh-cmd-input');
+    if (input) input.value = '';
+  }
+
+  function wire() {
+    var form = document.getElementById('fh-cmd-form');
+    var input = document.getElementById('fh-cmd-input');
+    if (!form || !input) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      send(input.value);
+    }, true);
+
+    var row = form.querySelector('.fh-cmd-row') || form;
+    function circle(html, title) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'fh-cmd-circle'; b.title = title; b.innerHTML = html;
+      return b;
+    }
+    var mic = circle('🎤', 'ভয়েসে বলুন');
+    var plus = circle('＋', 'ফাইল/ছবি (শীঘ্রই)');
+    if (input.parentNode) {
+      input.parentNode.insertBefore(mic, input);
+      input.parentNode.appendChild(plus);
+    }
+
+    var Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    mic.addEventListener('click', function () {
+      if (!Speech) { bubble('agent', 'এই ব্রাউজারে ভয়েস সাপোর্ট নেই।'); return; }
+      var rec = new Speech(); rec.lang = 'bn-BD'; rec.interimResults = false;
+      mic.classList.add('rec');
+      rec.onresult = function (ev) { input.value = ev.results[0][0].transcript; input.focus(); };
+      rec.onerror = function () { mic.classList.remove('rec'); };
+      rec.onend = function () { mic.classList.remove('rec'); };
+      rec.start();
+    });
+    plus.addEventListener('click', function () {
+      bubble('agent', 'ফাইল পাঠানোর সুবিধা এখনো যুক্ত হয়নি — শীঘ্রই আসছে।');
+    });
+
+    document.getElementById('btnAgent').addEventListener('click', function () {
+      panel().classList.toggle('is-open');
+      if (panel().classList.contains('is-open')) poll();
+    });
+    document.getElementById('btnVoice').addEventListener('click', function () {
+      var b = document.getElementById('btnVoice');
+      var on = b.classList.toggle('on');
+      var el = document.getElementById('fh-cmd-status');
+      if (on && window.speechSynthesis) {
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance('হারমেস সংযুক্ত'));
+      } else if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
+    });
+
+    setInterval(function () { if (panel().classList.contains('is-open')) poll(); else status(); }, 5000);
+    status();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(wire, 400); });
+  else setTimeout(wire, 400);
 })();
 </script>
 </body>
