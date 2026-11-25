@@ -208,6 +208,8 @@
   .brand .name{ display:block; font-size:16px; font-weight:800; letter-spacing:.2px; }
   .brand .tag{ display:block; font-size:10.5px; color:var(--muted); letter-spacing:.4px; }
   .appbar .spacer{ flex:1 1 auto; }
+  .hdr-hotzone{ position:fixed; top:0; left:0; right:0; height:12px; z-index:5300; }
+  .hdr-hotzone:hover{ cursor:pointer; }
   .appbar .clock{ font-size:12px; color:var(--muted); text-align:right; white-space:nowrap; }
   .main{ margin-top:58px; height:calc(100% - 58px); }
   #app > .sidebar{ background:linear-gradient(180deg,#12121a,#1a1a24); border-right:1px solid var(--border); }
@@ -225,6 +227,87 @@
     .brand .tag{ font-size:9.5px; }
     .appbar .clock{ font-size:10.5px; }
   }
+
+  /* ===== fixed header on every breakpoint · auto-hide · desktop scale · footer ===== */
+  :root{ --hdr-h:58px; }
+  .appbar{
+    height:var(--hdr-h); top:0;
+    transition:top .24s ease, box-shadow .24s ease;
+    box-shadow:0 6px 18px rgba(0,0,0,.28);
+  }
+  body.hdr-hidden .appbar{ top:calc(-1 * var(--hdr-h) - 2px); box-shadow:none; }
+  /* content scrolls UNDER the header: no layout shift when it hides */
+  .main{
+    margin-top:0; height:100%;
+    padding-top:calc(var(--hdr-h) + 16px);
+  }
+  body.hdr-hidden #app > .sidebar,
+  body.hdr-hidden .fh-side-drawer{ top:0 !important; }
+
+  /* same header size on phones — only the gap around it tightens */
+  @media (max-width:620px){
+    .appbar{ padding:0 10px; gap:8px; }
+    .brand .name{ font-size:15px; }
+    .brand .tag{ font-size:9.5px; }
+    .appbar .clock{ font-size:10.5px; }
+  }
+
+  /* desktop breathes: wider content, roomier cards, larger type */
+  @media (min-width:1100px){
+    .main{ padding:24px 30px; gap:18px; }
+    .card{ padding:20px 22px; }
+    .card h2{ font-size:17px; }
+    .mod-grid{ gap:14px; }
+    .brand .name{ font-size:17px; }
+  }
+
+  /* ---------- footer ---------- */
+  .appfoot{
+    margin-top:22px;
+    margin-bottom:calc(var(--fh-taskbar-h, 64px) + var(--fh-cmd-h, 52px) + 14px);
+    background:linear-gradient(180deg, rgba(24,24,34,.92), rgba(18,18,26,.96));
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; display:grid; gap:16px;
+    grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1fr);
+    box-shadow:var(--shadow);
+  }
+  .appfoot .f-brand{ display:flex; align-items:center; gap:11px; min-width:0; }
+  .appfoot .f-brand .txt{ min-width:0; }
+  .appfoot .f-name{ font-weight:800; font-size:15px; display:block; }
+  .appfoot .f-sub{ font-size:11.5px; color:var(--muted); display:block; margin-top:2px; line-height:1.45; }
+  .appfoot .f-col h3{
+    font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:8px; font-weight:700;
+  }
+  .appfoot .f-links{ display:flex; flex-wrap:wrap; gap:6px 14px; }
+  .appfoot .f-links a{
+    color:var(--text); text-decoration:none; font-size:12.5px; opacity:.85;
+    border-bottom:1px solid transparent; padding-bottom:1px;
+  }
+  .appfoot .f-links a:hover{ color:var(--amber); border-bottom-color:var(--amber); opacity:1; }
+  .appfoot .f-meta{ font-size:12px; color:var(--muted); line-height:1.7; }
+  .appfoot .f-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:6px; vertical-align:middle; }
+  .appfoot .f-hr{ grid-column:1/-1; height:1px; background:var(--border); margin:2px 0 0; }
+  .appfoot .f-bottom{
+    grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px 16px;
+    justify-content:space-between; font-size:11.5px; color:var(--muted);
+  }
+  @media (max-width:900px){
+    .appfoot{ grid-template-columns:1fr; padding:16px; }
+    .appfoot .f-links{ gap:8px 16px; }
+  }
+
+  /* ---- the bottom bar is the site footer: give it real height ---- */
+  html, :root, html.fh-has-catnav{ --fh-cmd-h:86px !important; }
+  .fh-cmd-inner{ padding:10px 14px 13px !important; border-radius:20px 20px 0 0 !important; }
+  .fh-cmd-status{ font-size:12px !important; padding:0 2px 9px !important; letter-spacing:.2px; }
+  .fh-cmd-row input{ font-size:15px !important; padding:13px 15px !important; border-radius:12px !important; }
+  .fh-cmd-send{ font-size:14px !important; padding:0 22px !important; border-radius:12px !important; }
+  @media (max-width:620px){
+    html, :root, html.fh-has-catnav{ --fh-cmd-h:82px !important; }
+    .fh-cmd-row input{ font-size:14px !important; padding:12px 13px !important; }
+  }
+  .appfoot{ margin:22px 0 16px !important; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -475,6 +558,46 @@
       </div>
       <div class="msg" id="mode-msg">Personal মোডে প্রকাশ্য থাকে — তোমার টড়ো, প্রজেক্ট ও রুটিন দেখা যাবে।</div>
     </section>
+    <footer class="appfoot" role="contentinfo">
+      <div class="f-brand">
+        <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true">
+          <defs><linearGradient id="fhGradF" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffd75e"/><stop offset="1" stop-color="#e0a51a"/></linearGradient></defs>
+          <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#fhGradF)"/>
+          <path d="M15 46V18h17v6.5H21.5v5H30v6.5h-8.5V46z" fill="#12121a"/>
+          <path d="M37 46V18h6.2v10.2h5.6V18H55v28h-6.2V34.8h-5.6V46z" fill="#12121a"/>
+        </svg>
+        <div class="txt">
+          <span class="f-name">FH Planet</span>
+          <span class="f-sub">One System · Connected Intelligence · Unified Control</span>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <h3>দ্রুত লিংক</h3>
+        <div class="f-links">
+          <a href="/#dashboard">ড্যাশবোর্ড</a>
+          <a href="/finance/">ফিন্যান্স</a>
+          <a href="/reports/">রিপোর্ট</a>
+          <a href="https://gitlab.com/gpcare017/fh-planet-dashboard" target="_blank" rel="noopener">GitLab</a>
+          <a href="https://github.com/fhpanet/FH-Planet-Deshboard" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <h3>সিস্টেম</h3>
+        <div class="f-meta">
+          <span class="f-dot"></span>Hermis ai Com · মুম্বাই<br>
+          ডেটাবেস: PostgreSQL 18 · সিঙ্ক: GitHub ↔ GitLab
+        </div>
+      </div>
+
+      <div class="f-hr"></div>
+      <div class="f-bottom">
+        <span>© 2026 FH Planet — All rights reserved</span>
+        <span>v1.1 · 25 Nov 2026 · হেডার · লোগো · মেনু</span>
+      </div>
+    </footer>
   </main>
 </div>
 
@@ -870,6 +993,61 @@ setInterval(()=>{
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('#fh-side-drawer .nav a, #fh-side-drawer .nav button');
     if (el && window.innerWidth < 1000) closeDrawer();
+  });
+})();
+</script>
+<script>
+(function () {
+  var HIDE_AT = 56;
+  var body = document.body;
+
+  function hide()  { body.classList.add('hdr-hidden'); }
+  function show()  { body.classList.remove('hdr-hidden'); }
+
+  /* 1. entering a dashboard window auto-hides the header */
+  function syncWithWindows() {
+    var active = document.querySelector('.fh-win.is-active .fh-win-body');
+    var scrolled = active ? active.scrollTop : 0;
+    if (active && scrolled > HIDE_AT) hide();
+    else if (active && scrolled <= 8) show();
+  }
+  document.addEventListener('fh-windows-change', syncWithWindows);
+
+  /* 2. scrolling inside the active window hides it; top brings it back */
+  var pending = null;
+  document.addEventListener('scroll', function (e) {
+    var t = e.target;
+    if (t === document || t === window) t = document.scrollingElement || document.documentElement;
+    clearTimeout(pending);
+    pending = setTimeout(function () {
+      var y = t.scrollTop || 0;
+      if (y > HIDE_AT) hide();
+      else if (y <= 8) show();
+    }, 90);
+  }, { passive: true, capture: true });
+
+  /* 3. the top edge is a hot zone: hover/tap it to bring the header back */
+  var zone = document.createElement('div');
+  zone.className = 'hdr-hotzone';
+  zone.setAttribute('aria-hidden', 'true');
+  zone.addEventListener('mouseenter', show);
+  zone.addEventListener('click', show);
+  document.body.appendChild(zone);
+
+  /* 3b. the footer belongs at the end of the scrolling dashboard content */
+  function placeFooter() {
+    var f = document.querySelector('footer.appfoot');
+    if (!f) return;
+    var host = document.querySelector('.fh-win.is-active .fh-win-body') || document.querySelector('.fh-win-body');
+    if (host && f.parentElement !== host) host.appendChild(f);
+  }
+  placeFooter();
+  document.addEventListener('fh-windows-change', placeFooter);
+
+  /* 4. never stay hidden after a resize */
+  var rt;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt); rt = setTimeout(show, 120);
   });
 })();
 </script>
