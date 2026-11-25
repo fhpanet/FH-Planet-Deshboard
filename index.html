@@ -181,7 +181,54 @@
     .mod-grid{grid-template-columns:1fr;}
     .modules-bar{min-width:0;}
   }
+
+  /* ===== app header · logo · 3-line drawer toggle (added 2026-11-25) ===== */
+  :root{ --fh-catnav-h:58px; }
+  .app{ display:block; }
+  .appbar{
+    position:fixed; top:0; left:0; right:0; height:58px; z-index:4600;
+    display:flex; align-items:center; gap:10px; padding:0 12px;
+    background:linear-gradient(180deg, rgba(20,20,28,.97), rgba(15,15,21,.93));
+    border-bottom:1px solid var(--border); backdrop-filter:blur(10px);
+  }
+  .appbar .fh-side-toggle{
+    position:static !important; width:40px !important; height:40px !important; min-height:40px !important;
+    padding:0 !important; border:1px solid var(--border) !important; border-radius:11px !important;
+    background:var(--panel2) !important; color:var(--text) !important;
+    display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    box-shadow:none !important; z-index:auto !important; cursor:pointer; flex:0 0 auto;
+  }
+  .appbar .fh-side-toggle span{ display:block; width:18px; height:2px; background:currentColor; border-radius:2px; transition:.2s ease; }
+  .appbar .fh-side-toggle:hover{ background:var(--amber) !important; color:#12121a !important; border-color:var(--amber) !important; }
+  .appbar .fh-side-toggle[aria-expanded="true"] span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+  .appbar .fh-side-toggle[aria-expanded="true"] span:nth-child(2){ opacity:0; }
+  .appbar .fh-side-toggle[aria-expanded="true"] span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+  .brand{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .brand .txt{ line-height:1.15; min-width:0; }
+  .brand .name{ display:block; font-size:16px; font-weight:800; letter-spacing:.2px; }
+  .brand .tag{ display:block; font-size:10.5px; color:var(--muted); letter-spacing:.4px; }
+  .appbar .spacer{ flex:1 1 auto; }
+  .appbar .clock{ font-size:12px; color:var(--muted); text-align:right; white-space:nowrap; }
+  .main{ margin-top:58px; height:calc(100% - 58px); }
+  #app > .sidebar{ background:linear-gradient(180deg,#12121a,#1a1a24); border-right:1px solid var(--border); }
+  #app > .sidebar .logo{ display:none; }   /* the brand now lives in the header */
+  .topbar{ display:none; }                 /* header replaces the old in-page title row */
+
+  /* the drawer is the navigation; the pill bar duplicated it and covered the header */
+  .fh-catnav{ display:none !important; }
+  .appbar{ z-index:5200 !important; }
+  .fh-side-drawer .logo{ display:none !important; }
+  .appbar .brand .name{ font-family:'Inter','Noto Sans Bengali',sans-serif; }
+
+  @media (max-width:620px){
+    .brand .name{ font-size:14.5px; }
+    .brand .tag{ font-size:9.5px; }
+    .appbar .clock{ font-size:10.5px; }
+  }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+Bengali:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="/assets/nav.css">
 <link rel="stylesheet" href="/assets/hub.css">
 <link rel="stylesheet" href="/assets/windows.css">
@@ -189,6 +236,31 @@
 </head>
 <body>
 <div class="app" id="app">
+  <header class="appbar">
+    <button class="fh-side-toggle" id="fh-side-toggle" type="button" aria-label="মেনু"
+            aria-controls="fh-side-drawer" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 64 64" role="img" aria-label="FH Planet">
+        <defs>
+          <linearGradient id="fhGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffd75e"/><stop offset="1" stop-color="#e0a51a"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#fhGrad)"/>
+        <path d="M15 46V18h17v6.5H21.5v5H30v6.5h-8.5V46z" fill="#12121a"/>
+        <path d="M37 46V18h6.2v10.2h5.6V18H55v28h-6.2V34.8h-5.6V46z" fill="#12121a"/>
+      </svg>
+      <div class="txt">
+        <span class="name">FH Planet</span>
+        <span class="tag">AGENT DASHBOARD</span>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="clock" id="fhClock"></div>
+  </header>
+  <button class="fh-side-scrim" id="fhSideScrim" type="button" aria-label="মেনু বন্ধ"></button>
   <aside class="sidebar">
     <div class="logo"><span class="lamp">🪐</span> FH Planet</div>
     <div class="nav" id="nav">
@@ -767,5 +839,39 @@ setInterval(()=>{
 <script src="/assets/nav.js" defer></script>
 <script src="/assets/windows.js" defer></script>
 <script src="/assets/command.js" defer></script>
+<script>
+(function () {
+  var clock = document.getElementById('fhClock');
+  function tick() {
+    if (!clock) return;
+    var d = new Date();
+    var date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    var time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    clock.textContent = date + ' · ' + time;
+  }
+  tick(); setInterval(tick, 20000);
+
+  function closeDrawer() {
+    document.body.classList.remove('fh-side-open');
+    var b = document.getElementById('fh-side-toggle');
+    if (b) { b.setAttribute('aria-expanded', 'false'); b.focus(); }
+  }
+  var toggle = document.getElementById('fh-side-toggle');
+  if (toggle) toggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var api = window.FHPlanetNav;
+    var open = document.body.classList.contains('fh-side-open');
+    if (open) { if (api && api.closeSidebar) api.closeSidebar(); else closeDrawer(); }
+    else if (api && api.openSidebar) api.openSidebar();
+    else { document.body.classList.add('fh-side-open'); toggle.setAttribute('aria-expanded', 'true'); }
+  });
+  var scrim = document.getElementById('fhSideScrim');
+  if (scrim) scrim.addEventListener('click', closeDrawer);
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('#fh-side-drawer .nav a, #fh-side-drawer .nav button');
+    if (el && window.innerWidth < 1000) closeDrawer();
+  });
+})();
+</script>
 </body>
 </html>
