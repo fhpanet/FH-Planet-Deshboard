@@ -401,6 +401,54 @@
   .fh-cmd-status .dot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; background:#ef4444; vertical-align:middle; }
   .fh-cmd-status .dot.ok{ background:#4ade80; }
   @media (max-width:620px){ .appbar .iconbtn{ width:36px; height:36px; flex-basis:36px; } }
+
+  /* ===== one-line category strip + sub-category bar ===== */
+  :root{ --strip-h:48px; --subbar-h:42px; }
+  .cat-strip{
+    position:fixed; left:0; right:0; top:var(--hdr-h); height:var(--strip-h); z-index:4100;
+    display:flex; align-items:center; gap:8px; padding:0 10px;
+    background:rgba(15,15,21,.94); border-bottom:1px solid var(--border);
+    overflow-x:auto; overflow-y:hidden; white-space:nowrap;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .cat-strip::-webkit-scrollbar{ display:none; }
+  .cat-chip{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+    height:34px; padding:0 14px; border-radius:999px;
+    border:1px solid var(--border); background:var(--panel2); color:var(--muted);
+    font-size:13px; font-family:inherit; cursor:pointer; transition:.15s ease;
+  }
+  .cat-chip .ci{ font-size:14px; }
+  .cat-chip:hover{ color:var(--text); border-color:rgba(245,197,66,.4); }
+  .cat-chip.active{
+    background:var(--amber); color:#12121a; border-color:var(--amber); font-weight:700;
+  }
+  .sub-bar{
+    position:fixed; left:0; right:0; top:calc(var(--hdr-h) + var(--strip-h)); height:var(--subbar-h);
+    z-index:4090; display:none; align-items:center; gap:7px; padding:0 12px;
+    background:rgba(18,18,26,.96); border-bottom:1px solid var(--border);
+    overflow-x:auto; white-space:nowrap; scrollbar-width:none;
+  }
+  .sub-bar::-webkit-scrollbar{ display:none; }
+  .sub-bar.is-open{ display:flex; }
+  .sub-chip{
+    flex:0 0 auto; height:29px; padding:0 12px; border-radius:999px;
+    border:1px solid var(--border); background:transparent; color:var(--muted);
+    font-size:12px; font-family:inherit; cursor:pointer;
+  }
+  .sub-chip:hover{ color:var(--text); }
+  .sub-chip.active{ background:rgba(245,197,66,.16); color:var(--amber); border-color:rgba(245,197,66,.45); }
+
+  /* content (the adopted window) sits right below the bars */
+  body.strip-on .main{ padding-top:calc(var(--hdr-h) + var(--strip-h) + 12px); }
+  body.strip-on .fh-win.is-max{
+    top:calc(var(--hdr-h) + var(--strip-h) + (var(--subbar-h) + 4px)) !important;
+  }
+  body.strip-on.has-subs .fh-win.is-max{ top:calc(var(--hdr-h) + var(--strip-h) + var(--subbar-h) + 4px) !important; }
+  body.hdr-hidden .cat-strip{ transform:translateY(calc(-1 * var(--hdr-h))); }
+  body.hdr-hidden .sub-bar{ transform:translateY(calc(-1 * var(--hdr-h))); }
+  .cat-strip, .sub-bar{ transition:transform .24s ease; }
+  @media (max-width:620px){ :root{ --strip-h:44px; --subbar-h:38px; } .cat-chip{ height:31px; font-size:12px; padding:0 12px; } }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1244,10 +1292,19 @@ setInterval(()=>{
     return b;
   }
 
+  var statusHTML = '';
   function setStatus(ok, text) {
     var el = document.getElementById('fh-cmd-status');
     if (!el) return;
-    el.innerHTML = '<span class="dot' + (ok ? ' ok' : '') + '"></span>' + text;
+    statusHTML = '<span class="dot' + (ok ? ' ok' : '') + '"></span>' + text;
+    el.innerHTML = statusHTML;
+  }
+  function guardStatus() {
+    var el = document.getElementById('fh-cmd-status');
+    if (!el) return;
+    new MutationObserver(function () {
+      if (statusHTML && el.innerHTML !== statusHTML) el.innerHTML = statusHTML;
+    }).observe(el, { childList: true, characterData: true, subtree: true });
   }
 
   function status() {
@@ -1354,12 +1411,126 @@ setInterval(()=>{
       } else if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
     });
 
+    guardStatus();
     setInterval(function () { if (panel().classList.contains('is-open')) poll(); else status(); }, 5000);
     status();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(wire, 400); });
   else setTimeout(wire, 400);
+})();
+</script>
+<script>
+(function () {
+  var main = document.getElementById('main');
+  if (!main || document.getElementById('catStrip')) return;
+
+  var sections = [].slice.call(main.querySelectorAll('section[id]'));
+  if (!sections.length) return;
+
+  var strip = document.createElement('div');
+  strip.className = 'cat-strip';
+  strip.id = 'catStrip';
+
+  var subbar = document.createElement('div');
+  subbar.className = 'sub-bar';
+  subbar.id = 'subBar';
+
+  function navId(id) { return id.replace(/^view-/, ''); }
+  function titleOf(sec) {
+    var h = sec.querySelector('h2');
+    if (!h) return navId(sec.id);
+    return h.textContent.trim();
+  }
+  function splitTitle(t) {
+    var m = t.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+/u);
+    var icon = m ? m[0] : '•';
+    var label = t.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '').trim();
+    return { icon: icon, label: label };
+  }
+  function subControls(sec) {
+    return [].slice.call(sec.querySelectorAll('[data-filter], .modebar button, [data-sub]'));
+  }
+
+  var active = null;
+
+  function buildSubs(sec) {
+    subbar.innerHTML = '';
+    var controls = subControls(sec);
+    if (!controls.length) { subbar.classList.remove('is-open'); document.body.classList.remove('has-subs'); return; }
+    controls.forEach(function (ctrl) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sub-chip' + (ctrl.classList.contains('active') ? ' active' : '');
+      b.textContent = ctrl.textContent.trim();
+      b.addEventListener('click', function () {
+        [].forEach.call(subbar.children, function (c) { c.classList.remove('active'); });
+        b.classList.add('active');
+        ctrl.click();
+      });
+      subbar.appendChild(b);
+    });
+    subbar.classList.add('is-open');
+    document.body.classList.add('has-subs');
+  }
+
+  function showOnly(sec) {
+    var parent = sec.parentElement;
+    if (!parent) return;
+    var sibs = [].slice.call(parent.children).filter(function (e) { return e.tagName === 'SECTION'; });
+    if (sibs.length < 2) return;
+    sibs.forEach(function (e) { e.style.display = (e === sec) ? '' : 'none'; });
+    parent.scrollTop = 0;
+  }
+
+  function activate(sec, chip) {
+    if (!sec) return;
+    active = sec;
+    [].forEach.call(strip.children, function (c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+    chip.scrollIntoView({ inline: 'center', block: 'nearest' });
+
+    buildSubs(sec);
+
+    var id = navId(sec.id);
+    var host = sec.parentElement;
+    var ownWindow = host && /^fh-win-(todo|planning|finance)-body$/.test(host.id || '');
+
+    if (ownWindow) {
+      if (window.FHPlanetNav && typeof window.FHPlanetNav.open === 'function') {
+        try { window.FHPlanetNav.open(id); } catch (e) {}
+      }
+      if (window.FHPlanetShell && typeof window.FHPlanetShell.maximize === 'function') {
+        try { window.FHPlanetShell.maximize(id); } catch (e) {}
+      }
+    } else {
+      showOnly(sec);
+    }
+  }
+
+  sections.forEach(function (sec) {
+    var parts = splitTitle(titleOf(sec));
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'cat-chip';
+    chip.setAttribute('data-cat', navId(sec.id));
+    chip.innerHTML = '<span class="ci">' + parts.icon + '</span><span>' + parts.label + '</span>';
+    chip.addEventListener('click', function () { activate(sec, chip); });
+    strip.appendChild(chip);
+  });
+
+  document.body.appendChild(strip);
+  document.body.appendChild(subbar);
+  document.body.classList.add('strip-on');
+
+  // open the first category so the page is never empty
+  function firstPaint() {
+    if (!strip.firstChild) return;
+    strip.firstChild.click();
+    if (sections[0]) showOnly(sections[0]);
+  }
+  setTimeout(firstPaint, 350);
+  setTimeout(firstPaint, 1300);
 })();
 </script>
 </body>
